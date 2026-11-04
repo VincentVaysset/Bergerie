@@ -45,14 +45,15 @@ Deux sens de travail :
 - Conséquence assumée : 2 lots de rations différentes face à face reçoivent chacun la moyenne → le contrôle le montre (ex. fixture : Brebis +2,6 %, Antenaises −7,5 %). L'ancienne appli attribuait à chaque lot sa propre part : c'était physiquement faux.
 - Contrôle par lot conservé : « X kg sur ses N places ÷ B têtes = G g/j ».
 - **Affichage Trémies (v11, demandé par Vincent le 04/11/2026)** : le « 2 × 205 g » prêtait à confusion avec les **2 repas par jour** → supprimé. En gros : **le poids à trouver à la pesée de réglage** = ce qui tombe sur N positions (défaut 10 = 20 places sur un double) **en un repas** = N × d / repas (ex. 410 g/j par position, 2 repas → 2,05 kg). En petit : g par place et par repas (double : d / 2 / repas → 102,5 g ; simple : d / repas) et g/j par position. La correction d'une dose figée se saisit **en kg pesés**. Réglages : repas par jour (défaut 2), positions pesées (défaut 10), `state.distrib = {repas, pesee}`.
+- **Fiche de réglage (v12)** : bouton dans Trémies → vue `fiche` (imprimable A4 / PDF via `window.print`, CSS `@media print`). Méthode en 4 étapes, exemple pas à pas (410 g/j → ÷ repas → × positions → pesée), tableau des pesées du jour par tapis/plage/aliment (pesée, par brebis et par repas, par brebis et par jour), ce que reçoit chaque lot. Texte explicite, « les maths c'est pas notre truc ».
 
 Fichiers :
 - `modele.js` : tout le calcul (pur). `M.v8` garde l'ancien calcul uniquement pour reprendre les données.
 - Données : clé **`bergerie_v6`** (`v:6`). Au premier lancement, `bergerie_lots_v5` (ou v3) est repris par `versV6` : ration voulue = ancienne ration par brebis, trémies figées sur les doses que l'ancienne appli affichait (`fige.repris`). **L'ancienne clé n'est jamais modifiée** (filet de sécurité). Si `bergerie_v6` est abîmée : secours IndexedDB d'abord, ancienne clé seulement en dernier.
 - `stockage.js` : localStorage + miroir IndexedDB + copies (7 jours, avant remise à zéro / import / restauration / recalcul).
 - Interface : 5 onglets en bas (Plan, Rations, Trémies, Contrôle, Réglages), aucun emoji, icônes SVG fines.
-- `sw.js` : cache `bergerie-v11`, scripts `?v=11` (**incrémenter partout à chaque version**). N'efface que les caches `bergerie-vN` (le stockage est partagé avec les autres applis du domaine).
-- Tests : `npm test` → `tests/modele.test.js` (34), `tests/interface.js` (55, Chromium taille téléphone), `tests/stockage-horsligne.js` (17). Tout doit passer avant de publier.
+- `sw.js` : cache `bergerie-v12`, scripts `?v=12` (**incrémenter partout à chaque version**). N'efface que les caches `bergerie-vN` (le stockage est partagé avec les autres applis du domaine).
+- Tests : `npm test` → `tests/modele.test.js` (34), `tests/interface.js` (64, Chromium taille téléphone), `tests/stockage-horsligne.js` (17). Tout doit passer avant de publier.
 
 ## 3. Géométrie de la bergerie (validée sur le terrain — ne pas modifier)
 

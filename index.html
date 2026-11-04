@@ -115,6 +115,37 @@
   .chip{border-radius:999px;padding:9px 15px;border:2px solid transparent;font-weight:600;background:var(--doux);font-size:15px}
   .chip.on{border-color:var(--encre)}
 
+  /* fiche de réglage */
+  .fiche{max-width:820px;margin:0 auto}
+  .fiche .titre{background:var(--vert);color:#fff;border-radius:16px;padding:16px 18px;margin:6px 0 12px}
+  .fiche .titre b{display:block;font-size:22px;margin-bottom:4px}
+  .fiche h3{font-size:17px;margin:20px 0 8px;padding-left:10px;border-left:5px solid var(--att)}
+  .etape{display:flex;gap:12px;align-items:flex-start;padding:9px 0}
+  .etape .n{width:32px;height:32px;border-radius:50%;background:var(--att);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:16px}
+  .etape div{line-height:1.45}
+  .flux{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}
+  .flux .bx{border-radius:12px;padding:10px 12px;text-align:center;min-width:110px;flex:1}
+  .flux .bx b{display:block;font-size:22px}
+  .flux .op{font-weight:800;color:var(--muet);font-size:15px;white-space:nowrap}
+  .bx.b1{background:#e8eef8;color:#2b4c7e}.bx.b2{background:var(--attf);color:#8a5408}.bx.b3{background:var(--okf);color:var(--ok)}
+  table.ft{width:100%;border-collapse:collapse;font-size:14.5px;margin:6px 0}
+  table.ft th{text-align:left;font-size:12px;letter-spacing:.5px;text-transform:uppercase;color:var(--muet);padding:6px 6px;border-bottom:2px solid var(--ligne)}
+  table.ft td{padding:8px 6px;border-bottom:1px solid var(--doux);vertical-align:middle}
+  table.ft td.pes{font-size:20px;font-weight:800;color:var(--ok);white-space:nowrap}
+  table.ft tr.pl td{background:var(--doux);font-weight:700;font-size:14px}
+  .tapisT{display:flex;align-items:center;gap:8px;background:#e9f0e6;border-radius:10px;padding:8px 12px;font-weight:700;margin-top:14px}
+  @media print{
+    @page{size:A4;margin:12mm}
+    html,body{height:auto;overflow:visible;display:block;background:#fff}
+    header,nav,.noprint{display:none!important}
+    main{overflow:visible}
+    .vue{display:none!important}
+    #v-fiche{display:block!important;padding:0;max-width:none}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+    .carte,.tapisT,table.ft tr,.etape,.flux{break-inside:avoid}
+    .tapisT,.fiche h3{break-after:avoid}
+    .fiche .titre{margin-top:0}
+  }
   @media(min-width:980px){
     #v-plan.on{display:flex;height:100%}
     #planWrap{flex-direction:row;height:100%;width:100%}
@@ -146,11 +177,12 @@
   <section class="vue" id="v-tremies"></section>
   <section class="vue" id="v-controle"></section>
   <section class="vue" id="v-reglages"></section>
+  <section class="vue" id="v-fiche"></section>
 </main>
 <nav id="nav"></nav>
 
-<script src="modele.js?v=11"></script>
-<script src="stockage.js?v=11"></script>
+<script src="modele.js?v=12"></script>
+<script src="stockage.js?v=12"></script>
 <script>
 'use strict';
 var M=window.Bergerie,S=window.Stockage;
@@ -247,12 +279,13 @@ function render(){
   if(a&&a.id&&a.tagName==='INPUT')keep={id:a.id,v:a.value,s:a.selectionStart,e:a.selectionEnd};
   var bs=M.bilans(state);
   renderHeader();renderNav(bs);
-  ['plan','rations','tremies','controle','reglages'].forEach(function(v){$('v-'+v).classList.toggle('on',v===vue);});
-  ['rations','tremies','controle','reglages'].forEach(function(v){if(v!==vue)$('v-'+v).innerHTML='';});
+  ['plan','rations','tremies','controle','reglages','fiche'].forEach(function(v){$('v-'+v).classList.toggle('on',v===vue);});
+  ['rations','tremies','controle','reglages','fiche'].forEach(function(v){if(v!==vue)$('v-'+v).innerHTML='';});
   if(vue==='plan'){renderMap(bs);renderPlanBas(bs);}
   else if(vue==='rations')$('v-rations').innerHTML=rationsHtml(bs);
   else if(vue==='tremies')$('v-tremies').innerHTML=tremiesHtml();
   else if(vue==='controle')$('v-controle').innerHTML=controleHtml(bs);
+  else if(vue==='fiche')$('v-fiche').innerHTML=ficheHtml(bs);
   else $('v-reglages').innerHTML=reglagesHtml();
   if(keep){var el=$(keep.id);if(el){el.value=keep.v;el.focus();try{el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
@@ -266,7 +299,7 @@ function renderNav(bs){
   var t=[['plan','plan','Plan'],['rations','ration','Rations'],['tremies','hopper','Trémies'],['controle','ctrl','Contrôle'],['reglages','gear','Réglages']];
   $('nav').innerHTML=t.map(function(x){
     var al=x[0]==='controle'&&(w==='attention'||w==='hors')?'<span class="alerte" style="background:var(--'+(w==='hors'?'hors':'att')+')"></span>':'';
-    return '<button data-vue="'+x[0]+'" class="'+(vue===x[0]?'on':'')+'">'+ic(x[1],22)+'<span>'+x[2]+'</span>'+al+'</button>';
+    return '<button data-vue="'+x[0]+'" class="'+(vue===x[0]||(vue==='fiche'&&x[0]==='tremies')?'on':'')+'">'+ic(x[1],22)+'<span>'+x[2]+'</span>'+al+'</button>';
   }).join('');
 }
 function goVue(v){vue=v;sel=null;arm=null;editName=null;editFeed=null;editDose=null;showUnique=false;try{localStorage.setItem('bergerie_vue',v);}catch(e){}render();$('v-'+v).scrollTop=0;document.querySelector('main').scrollTop=0;if(v==='plan')setTimeout(fitView,0);}
@@ -434,6 +467,7 @@ function tremiesHtml(){
     h+='<button class="btn prim plein" data-act="figer">'+ic('lock')+' C’est réglé : figer les trémies</button>';
   }
   if(!state.feeds.length)return h+'<div class="carte muet">Aucun aliment : ajoute-en dans Réglages.</div>';
+  h+='<button class="btn plein" data-vue="fiche" style="margin-top:8px">'+ic('dl')+' Fiche de réglage à imprimer</button>';
   var pls=M.plages(state),pv=f?M.planVoulu(state):null,grand=0;
   pls.forEach(function(rs,t){
     var tot=0;rs.forEach(function(r){state.feeds.forEach(function(fd){tot+=(r.d[fd.id]||0)*(r.k2-r.k1);});});grand+=tot;
@@ -465,6 +499,60 @@ function tremiesHtml(){
   h+='<div class="carte ligne"><span class="muet sp">À verser au total</span><span class="moyen num">'+fmt(grand,1)+' kg</span></div>';
   h+='<div class="hint">En gros : le poids à trouver à la pesée de réglage, sur '+M.nPesee(state)+' positions et pour un repas ('+M.repas(state)+' repas par jour, modifiable dans Réglages). Places numérotées depuis la gauche. La trémie verse au milieu du tapis double : une seule dose pour les 2 rangées, chaque rangée en reçoit la moitié. Impossible de séparer la ration de 2 lots face à face.</div>';
   return h;
+}
+
+/* ============ FICHE DE RÉGLAGE (à imprimer) ============ */
+function gtxt(x){return fmt(x,Math.abs(x-Math.round(x))<1e-9?0:1)+' g';}
+function kgtxt(x){return fmt(x,2)+' kg';}
+function ficheHtml(bs){
+  var R=M.repas(state),N=M.nPesee(state),f=state.fige,auj=new Date();
+  var lg=fmt(N/M.PL_M,2).replace(/,?0+$/,'');
+  var ex=410,exR=ex/R,exP=N*ex/R/1000,exB=ex/2/R;
+  var h='<div class="fiche">';
+  h+='<div class="ligne noprint" style="margin-bottom:6px"><button class="btn" data-vue="tremies">'+ic('left')+' Retour</button><span class="sp"></span><button class="btn prim" data-act="print">'+ic('dl')+' Imprimer ou PDF</button></div>';
+  h+='<div class="titre"><b>Fiche de réglage des trémies</b><span>'+('0'+auj.getDate()).slice(-2)+'/'+('0'+(auj.getMonth()+1)).slice(-2)+'/'+auj.getFullYear()+' · '+
+    (f?'trémies figées depuis le '+dateFr(f.date):'à régler, chiffres calculés d’après les rations voulues')+' · '+R+' repas par jour · pesée sur '+N+' positions</span></div>';
+
+  h+='<h3>Comment régler, en 4 étapes</h3><div class="carte">'+
+    '<div class="etape"><span class="n">1</span><div><b>Repère '+N+' positions</b> sur le tapis double : <b>'+lg+' m</b> de long (3 places par mètre), soit <b>'+2*N+' places</b>, '+N+' de chaque côté. Sur le tapis simple : '+N+' places, '+lg+' m.</div></div>'+
+    '<div class="etape"><span class="n">2</span><div><b>Fais tomber un seul repas</b> sur cette longueur et récupère tout l’aliment (bâche, bac).</div></div>'+
+    '<div class="etape"><span class="n">3</span><div><b>Pèse.</b> Tu dois trouver le <b style="color:var(--ok)">poids en vert</b> du tableau plus bas, pour la plage et l’aliment concernés.</div></div>'+
+    '<div class="etape"><span class="n">4</span><div><b>Trop ou pas assez ?</b> Ajuste la trémie et pèse à nouveau. Quand c’est juste, passe à la plage suivante. Tout est réglé : dans l’appli, <b>« C’est réglé : figer les trémies »</b>.</div></div></div>';
+
+  h+='<h3>Exemple pas à pas</h3><div class="carte">'+
+    '<div class="flux"><div class="bx b1">dose du jour<b>'+ex+' g</b>par position</div><span class="op">÷ '+R+' repas</span>'+
+    '<div class="bx b2">un repas<b>'+gtxt(exR)+'</b>par position</div><span class="op">× '+N+' positions</span>'+
+    '<div class="bx b3">à la pesée<b>'+kgtxt(exP)+'</b>pour un repas</div></div>'+
+    '<div class="petit" style="line-height:1.5">Une position nourrit <b>2 brebis</b>, une de chaque côté du tapis. Donc chaque brebis reçoit <b>'+gtxt(exR)+' ÷ 2 = '+gtxt(exB)+'</b> par repas, soit <b>'+gtxt(ex/2)+' par jour</b>.<br>'+
+    'Sur le tapis simple, une seule rangée : la place reçoit toute la dose.</div></div>';
+
+  h+='<h3>Les chiffres à trouver</h3>';
+  var pls=M.plages(state);
+  pls.forEach(function(rs,t){
+    var lignes='';
+    rs.forEach(function(r){
+      if(!state.feeds.some(function(fd){return (r.d[fd.id]||0)>0.0005;}))return;
+      var la=lotById(r.a),lb=r.b==null?null:lotById(r.b),same=r.b!=null&&r.b===r.a;
+      var who=r.b==null?esc(lotShort(la)):(same?esc(lotShort(la))+' des 2 côtés':esc(lotShort(la))+' + '+esc(lotShort(lb))+' (ration commune)');
+      lignes+='<tr class="pl"><td colspan="4">Places '+(r.k1+1)+' à '+r.k2+' · '+who+'</td></tr>';
+      state.feeds.forEach(function(fd){
+        var d=r.d[fd.id]||0;if(d<=0.0005)return;
+        lignes+='<tr><td><span class="dot" style="background:'+feedCol(fd.id)+';width:11px;height:11px;margin-right:6px"></span>'+esc(fd.name)+'</td><td class="pes num">'+kgtxt(M.pesee(state,d))+'</td><td class="num">'+gr(M.parPlaceRepas(state,t,d))+' g</td><td class="num">'+gr(d/(t<3?2:1))+' g</td></tr>';
+      });
+    });
+    if(!lignes)return;
+    h+='<div class="tapisT">'+ic('hopper',18)+NOMS_TAPIS[t]+'</div><table class="ft"><tr><th>Aliment</th><th>À la pesée ('+N+' pos., 1 repas)</th><th>Par brebis et par repas</th><th>Par brebis et par jour</th></tr>'+lignes+'</table>';
+  });
+
+  h+='<h3>Ce que reçoit chaque lot</h3><table class="ft"><tr><th>Lot</th><th>Têtes</th><th>Reçoit</th><th>Voulu</th><th>Écart</th></tr>';
+  bs.forEach(function(b){
+    if(!(b.b>0&&b.places>0))return;
+    var l=lotById(b.id);
+    h+='<tr><td><span class="dot" style="background:'+lotCol(l.id)+';width:11px;height:11px;margin-right:6px"></span><b>'+esc(lotName(l))+'</b></td><td class="num">'+b.b+'</td><td class="num"><b>'+gr(b.recu)+' g/j</b></td><td class="num">'+gr(b.voulu)+' g/j</td><td>'+(b.pct!=null?'<span class="badge n-'+b.niveau+'">'+pct(b.pct)+'</span>':'')+'</td></tr>';
+  });
+  h+='</table>';
+  h+='<div class="hint">Calculé par Ma bergerie le '+dateFr(auj.toISOString())+'. Tant que les trémies sont figées, bouger les lots ne change pas les réglages : refais une fiche après un recalcul. Marges : vert sous '+tf(state.tol.vert)+' %, orange sous '+tf(state.tol.orange)+' %.</div>';
+  return h+'</div>';
 }
 
 /* ============ CONTRÔLE ============ */
@@ -512,7 +600,7 @@ function reglagesHtml(){
     '<div class="muet petit" style="margin-top:8px">Un fichier à garder, ou pour passer sur un autre téléphone.</div><div class="sep"></div>'+
     '<button class="btn" id="btnCopies" data-act="copies">'+ic('reset')+' Copies automatiques</button><div class="muet petit" style="margin-top:8px">Une par jour sur 7 jours, et une avant chaque remise à zéro, import ou restauration. Sur ce téléphone uniquement.</div><div id="copiesList"></div></div>';
   h+='<h2>Tout effacer</h2><div class="carte"><button class="btn'+(arm==='reset'?' danger':'')+'" id="btnReset" data-act="reset">'+ic(arm==='reset'?'warn':'trash')+(arm==='reset'?' Confirmer : tout effacer':' Remettre à zéro')+'</button><div class="muet petit" style="margin-top:8px">Une copie est gardée avant d’effacer.</div></div>';
-  h+='<div class="hint">Ma bergerie v11 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
+  h+='<div class="hint">Ma bergerie v12 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
   return h;
 }
 function renderCopies(){
@@ -570,6 +658,7 @@ document.addEventListener('click',function(e){
       else armer('recalc');
       break;
     case 'unique':showUnique=!showUnique;break;
+    case 'print':window.print();return;
     case 'uniqueX':showUnique=false;break;
     case 'uniqueOk':
       state.feeds.forEach(function(fd){var el=$('uni_'+fd.id);if(el&&String(el.value).trim()!=='')M.doseUnique(state,fd.id,pnum(el.value)/1000);});
