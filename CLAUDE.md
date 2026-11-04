@@ -33,12 +33,25 @@ Appli de Vincent Vaysset, **éleveur ovin laitier bio** : plan numérique de sa 
 
 Fichiers : `index.html` (~53 Ko, tout-en-un), `README.md`, `manifest.webmanifest`, `sw.js`, `icon.svg`. Dernier commit : `466077f`.
 
-## 2 bis. Refonte v9 (04/11/2026) — architecture
+## 2 bis. v10 (04/11/2026) — LE MODÈLE ACTUEL (remplace le §4 pour ce qui suit)
 
-- `modele.js` : toute la logique métier, pure (fonctions `M.xxx(state, …)`), sans DOM. `index.html` n'en garde que des enveloppes du même nom (`lotStats(id)` → `M.lotStats(state,id)`), donc l'UI n'a pas changé.
-- `stockage.js` : localStorage `bergerie_lots_v5` (inchangé, relu à chaque écriture) + miroir IndexedDB (`bergerie`/`etats` : `courant`, `jour:AAAA-MM-JJ` ×7, `avant:<ISO>|<motif>` ×5). Secours auto si localStorage vide/abîmé. `navigator.storage.persist()`.
-- `sw.js` : cache `bergerie-v9`, scripts versionnés `?v=9` (**incrémenter partout à chaque version** : index.html, sw.js FICHIERS et CACHE), page réseau d'abord avec repli cache après 3 s.
-- Tests : `npm test` → `tests/modele.test.js` (Node), `tests/non-regression.js` (§6 dans Chromium), `tests/stockage-horsligne.js` (secours, copies, hors ligne). Tout doit passer avant de publier.
+Vincent a revu le principe le 04/11/2026 (« rien n'est figé, tu peux tout revoir ») et validé deux points :
+- **Repère** : écart entre la ration reçue et la **ration voulue** du lot (vert < 5 %, orange < 15 %, rouge au-delà). Marges réglables dans Contrôle et Réglages (décimales acceptées, vert < orange). Option « compter chaque aliment » (oui par défaut) : un aliment hors marge suffit à alerter, la cause est affichée.
+- **Physique, trémies figées** : quand une barrière bouge sans toucher aux trémies, **chaque place garde la dose réglée à cet endroit** (la trémie ne sait pas quel lot est devant elle).
+
+Deux sens de travail :
+1. **À régler** (`state.fige = null`) : ration voulue par lot `lot.obj[fid]` (kg/brebis/j) → part par place = b × obj / P → plage de tapis double = somme des parts des 2 côtés (« 2 × moyenne », règle 1 inchangée). Changer l'effectif garde la ration voulue, les doses suivent.
+2. **Figées** (`state.fige = {date, tapis:[4][{k1,k2,d:{fid:kg par position}}], repris?}`) : le plan des trémies est mémorisé par position. Ce que reçoit un lot = Σ doses devant ses places ; **sur un tapis double chaque rangée reçoit la moitié** de la dose versée. Changer l'effectif : kg stables, la ration par brebis suit (ancienne règle 2, maintenant portée par l'état figé). « Même dose partout » = cas agnelage (500 g/place à tout le monde). Une dose figée se corrige à la main par plage.
+- Conséquence assumée : 2 lots de rations différentes face à face reçoivent chacun la moyenne → le contrôle le montre (ex. fixture : Brebis +2,6 %, Antenaises −7,5 %). L'ancienne appli attribuait à chaque lot sa propre part : c'était physiquement faux.
+- Contrôle par lot conservé : « X kg sur ses N places ÷ B têtes = G g/j ».
+
+Fichiers :
+- `modele.js` : tout le calcul (pur). `M.v8` garde l'ancien calcul uniquement pour reprendre les données.
+- Données : clé **`bergerie_v6`** (`v:6`). Au premier lancement, `bergerie_lots_v5` (ou v3) est repris par `versV6` : ration voulue = ancienne ration par brebis, trémies figées sur les doses que l'ancienne appli affichait (`fige.repris`). **L'ancienne clé n'est jamais modifiée** (filet de sécurité). Si `bergerie_v6` est abîmée : secours IndexedDB d'abord, ancienne clé seulement en dernier.
+- `stockage.js` : localStorage + miroir IndexedDB + copies (7 jours, avant remise à zéro / import / restauration / recalcul).
+- Interface : 5 onglets en bas (Plan, Rations, Trémies, Contrôle, Réglages), aucun emoji, icônes SVG fines.
+- `sw.js` : cache `bergerie-v10`, scripts `?v=10` (**incrémenter partout à chaque version**). N'efface que les caches `bergerie-vN` (le stockage est partagé avec les autres applis du domaine).
+- Tests : `npm test` → `tests/modele.test.js` (32), `tests/interface.js` (50, Chromium taille téléphone), `tests/stockage-horsligne.js` (17). Tout doit passer avant de publier.
 
 ## 3. Géométrie de la bergerie (validée sur le terrain — ne pas modifier)
 
@@ -51,7 +64,7 @@ Fichiers : `index.html` (~53 Ko, tout-en-un), `README.md`, `manifest.webmanifest
 - Une position sur tapis double = 1 place de chaque côté (2 rangées face à face).
 - Une aire est découpée en morceaux par des **barrières** (position k entière, 0–92) ; chaque morceau est attribué à un lot.
 
-## 4. Le modèle métier — LE cœur du projet
+## 4. Le modèle métier v8 (historique — voir §2 bis pour le modèle actuel)
 
 ### 4.1 Les trois ancres de saisie (par lot ET par aliment, exclusives)
 
