@@ -68,9 +68,11 @@ const srv = http.createServer((req, rep) => {
   console.log('Hors ligne');
   ctx = await browser.newContext(); page = await ctx.newPage(); errs = [];
   page.on('pageerror', e => errs.push(e.message));
+  /* avant toute installation : un cache d'une autre appli du domaine et un vieux cache bergerie */
+  await page.goto(url + 'icon.svg');
+  await page.evaluate(() => Promise.all([caches.open('autre-appli-v1'), caches.open('bergerie-v7')]));
   await page.goto(url); await page.waitForTimeout(500);
   await page.evaluate(s => localStorage.setItem('bergerie_lots_v5', s), JSON.stringify(FIX));
-  await page.evaluate(() => Promise.all([caches.open('autre-appli-v1'), caches.open('bergerie-v7')]));
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload(); await page.evaluate(() => navigator.serviceWorker.ready);
   const cs = await page.evaluate(() => caches.keys());
