@@ -10,7 +10,8 @@ self.addEventListener('install', function (e) {
 });
 self.addEventListener('activate', function (e) {
   e.waitUntil(caches.keys().then(function (ks) {
-    return Promise.all(ks.map(function (k) { if (k !== CACHE) return caches.delete(k); }));
+    /* stockage partagé par toutes les applis de vincentvaysset.github.io : n'effacer que les anciens caches de la bergerie */
+    return Promise.all(ks.map(function (k) { if (/^bergerie-v\d+$/.test(k) && k !== CACHE) return caches.delete(k); }));
   }).then(function () { return self.clients.claim(); }));
 });
 

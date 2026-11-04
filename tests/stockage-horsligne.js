@@ -70,8 +70,11 @@ const srv = http.createServer((req, rep) => {
   page.on('pageerror', e => errs.push(e.message));
   await page.goto(url); await page.waitForTimeout(500);
   await page.evaluate(s => localStorage.setItem('bergerie_lots_v5', s), JSON.stringify(FIX));
+  await page.evaluate(() => Promise.all([caches.open('autre-appli-v1'), caches.open('bergerie-v7')]));
   await page.evaluate(() => navigator.serviceWorker.ready);
   await page.reload(); await page.evaluate(() => navigator.serviceWorker.ready);
+  const cs = await page.evaluate(() => caches.keys());
+  check('caches des autres applis conservés, ancien cache bergerie effacé', cs.includes('autre-appli-v1') && !cs.includes('bergerie-v7') && cs.includes('bergerie-v9'), cs);
   check('service worker actif', await page.evaluate(() => !!navigator.serviceWorker.controller));
   await ctx.setOffline(true);
   await page.reload();
