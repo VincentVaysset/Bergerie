@@ -16,58 +16,135 @@
 (function (root) {
   'use strict';
 
-  /* ---- géométrie (validée sur le terrain — ne pas modifier) ---- */
+  /* ---- géométrie ----
+     Une bergerie = des bandes parallèles, de haut en bas : aires, tapis doubles, tapis simples, couloirs.
+     Unité de longueur : la colonne = une place (1 / plm mètre), comptée depuis le bord gauche du bâtiment.
+     Aire     : {type:'aire', c0, len, h}            — de la colonne c0 à c0+len ; barrières en colonnes absolues.
+     Double   : {type:'double', c0, len, h}          — len places par côté ; côté A = aire au-dessus, B = aire en dessous.
+     Simple   : {type:'simple', c0, len, h, cote}    — une rangée ; mange depuis l'aire 'haut' (au-dessus) ou 'bas'.
+     Couloir  : {type:'couloir', h}                  — dessin seulement.
+     Par défaut : la bergerie de Vincent (validée sur le terrain, ne pas modifier). */
   var PL_M = 3, DBL_PL = 92, TS_PL = 102;
-  var DBL_X0 = 0, DBL_LEN = DBL_PL / PL_M;   /* doubles : 0 → 30,67 m */
-  var TS_LEN = TS_PL / PL_M;                 /* simple : 0 → 34 m */
+  var DBL_X0 = 0, DBL_LEN = DBL_PL / PL_M;   /* ancienne géométrie fixe (v8), sert à reprendre les données */
+  var TS_LEN = TS_PL / PL_M;
   var KEY = 'bergerie_v6', KEY5 = 'bergerie_lots_v5', KEYOLD = 'bergerie_lots_v3';
-  var NB_POS = [DBL_PL, DBL_PL, DBL_PL, TS_PL];
 
-  function xOfK(k) { return DBL_X0 + DBL_LEN * k / DBL_PL; }
+  function geoDefaut() {
+    return { plm: 3, bandes: [
+      { id: 'a1', type: 'aire', nom: 'Aire 1', c0: 0, len: 105, h: 4.3 },
+      { id: 't1', type: 'double', nom: 'Tapis double 1', c0: 0, len: 92, h: 0.7 },
+      { id: 'a2', type: 'aire', nom: 'Aire 2', c0: 0, len: 105, h: 4.3 },
+      { id: 't2', type: 'double', nom: 'Tapis double 2', c0: 0, len: 92, h: 0.7 },
+      { id: 'a3', type: 'aire', nom: 'Aire 3', c0: 0, len: 105, h: 4.3 },
+      { id: 't3', type: 'double', nom: 'Tapis double 3', c0: 0, len: 92, h: 0.7 },
+      { id: 'a4', type: 'aire', nom: 'Aire 4', c0: 0, len: 105, h: 4.3 },
+      { id: 'ts', type: 'simple', nom: 'Tapis simple', c0: 0, len: 102, h: 0.7, cote: 'haut' },
+      { id: 'co', type: 'couloir', nom: 'Couloir d’alimentation', h: 2 }
+    ] };
+  }
+  /* géométrie dépliée : aires[] et tapis[] (index = ordre de haut en bas), positions y, dimensions */
+  var cacheG = { k: null, v: null };
+  function geoInfo(geo) {
+    var k = JSON.stringify(geo);
+    if (cacheG.k === k) return cacheG.v;
+    var aires = [], tapis = [], y = 0, bi = {};
+    geo.bandes.forEach(function (b, ix) {
+      var x = { id: b.id, ix: ix, type: b.type, nom: b.nom, y: y, h: b.h };
+      if (b.type === 'aire') { x.c0 = b.c0; x.len = b.len; x.i = aires.length; aires.push(x); }
+      else if (b.type === 'double' || b.type === 'simple') { x.c0 = b.c0; x.len = b.len; x.double = b.type === 'double'; x.cote = b.cote || 'haut'; x.t = tapis.length; tapis.push(x); }
+      bi[ix] = x; y += b.h;
+    });
+    /* chaque tapis : aire(s) qui le bordent */
+    tapis.forEach(function (tp) {
+      var up = bi[tp.ix - 1], dn = bi[tp.ix + 1];
+      up = up && up.type === 'aire' ? up.i : null; dn = dn && dn.type === 'aire' ? dn.i : null;
+      if (tp.double) { tp.A = up; tp.B = dn; } else { tp.A = tp.cote === 'bas' ? dn : up; tp.B = null; }
+    });
+    var L = 0;
+    geo.bandes.forEach(function (b) { if (b.len != null) L = Math.max(L, (b.c0 + b.len) / geo.plm); });
+    var v = { plm: geo.plm, aires: aires, tapis: tapis, W: y, L: L };
+    cacheG = { k: k, v: v };
+    return v;
+  }
+  function G(s) { return geoInfo((s && s.geo) || geoDefaut()); }
+  function nbTapis(s) { return G(s).tapis.length; }
+  function nbPos(s, t) { return G(s).tapis[t].len; }
+  function estDouble(s, t) { return G(s).tapis[t].double; }
+  function plm(s) { return G(s).plm; }
+
+  /* défauts de cohérence de la géométrie : [] si tout va bien */
+  function verifGeo(geo) {
+    var e = [];
+    if (!geo || !Array.isArray(geo.bandes)) return ['Plan illisible.'];
+    if (!(geo.plm >= 1 && geo.plm <= 10)) e.push('Places par mètre : entre 1 et 10.');
+    var g = geoInfo(geo);
+    if (!g.aires.length) e.push('Il faut au moins une aire.');
+    if (!g.tapis.length) e.push('Il faut au moins un tapis.');
+    geo.bandes.forEach(function (b) {
+      if (!(b.h > 0)) e.push((b.nom || b.type) + ' : largeur à saisir.');
+      if (b.len != null && !(b.len >= 1)) e.push((b.nom || b.type) + ' : longueur à saisir.');
+      if (b.c0 != null && !(b.c0 >= 0)) e.push((b.nom || b.type) + ' : début à 0 m ou plus.');
+    });
+    g.tapis.forEach(function (tp) {
+      var nm = tp.nom || 'Tapis';
+      if (tp.double && (tp.A == null || tp.B == null)) e.push(nm + ' : un tapis double doit être entre deux aires.');
+      if (!tp.double && tp.A == null) e.push(nm + ' : il doit toucher une aire du côté choisi.');
+      [tp.A, tp.B].forEach(function (ai) {
+        if (ai == null) return;
+        var a = g.aires[ai];
+        if (tp.c0 < a.c0 || tp.c0 + tp.len > a.c0 + a.len) e.push(nm + ' : il dépasse de ' + (a.nom || 'son aire') + '.');
+      });
+    });
+    return e;
+  }
+
+  function xOfK(k) { return k / PL_M; }                 /* v8 : colonne → mètres (3 places/m) */
   function cumT(k) { return Math.round(TS_PL * xOfK(k) / TS_LEN); }
-  function ksOf(s, i) { return [0].concat(s.airs[i].barriers, [DBL_PL]); }
-  function tsOf(k1, k2, isLast) { return (isLast ? TS_PL : cumT(k2)) - cumT(k1); }
+  function ksOf(s, i) { var a = G(s).aires[i]; return [a.c0].concat(s.airs[i].barriers, [a.c0 + a.len]); }
+  function recouvre(a1, a2, b1, b2) { return Math.max(0, Math.min(a2, b2) - Math.max(a1, b1)); }
 
+  /* morceaux de l'aire i : {j, k1, k2, isLast, lot, pl (places à table)} */
   function segsOf(s, i) {
-    var ks = ksOf(s, i), o = [];
+    var g = G(s), ks = ksOf(s, i), o = [];
     for (var j = 0; j < ks.length - 1; j++) {
-      var k1 = ks[j], k2 = ks[j + 1], isLast = j === ks.length - 2, ts = (i === 3) ? tsOf(k1, k2, isLast) : 0;
-      var n = k2 - k1;
-      o.push({ j: j, k1: k1, k2: k2, isLast: isLast, lot: s.airs[i].lots[j], ts: ts,
-        pl: i === 0 ? n : (i === 1 || i === 2 ? 2 * n : n + ts) });
+      var k1 = ks[j], k2 = ks[j + 1], pl = 0;
+      g.tapis.forEach(function (tp) {
+        var n = (tp.A === i ? 1 : 0) + (tp.B === i ? 1 : 0);
+        if (n) pl += n * recouvre(k1, k2, tp.c0, tp.c0 + tp.len);
+      });
+      o.push({ j: j, k1: k1, k2: k2, isLast: j === ks.length - 2, lot: s.airs[i].lots[j], pl: pl });
     }
     return o;
   }
   function lotById(s, id) { for (var x = 0; x < s.lots.length; x++) if (s.lots[x].id === id) return s.lots[x]; return null; }
 
-  /* places du lot : aire 1 → tapis 1 ; aires 2-3 → 2 tapis ; aire 4 → tapis 3 + tapis simple */
+  /* places du lot : t[tapis] = places à table sur chaque tapis, P = total */
   function lotStats(s, id) {
-    var t = [0, 0, 0, 0], segs = [];
-    for (var i = 0; i < 4; i++) segsOf(s, i).forEach(function (sg) {
-      if (sg.lot !== id) return;
-      var n = sg.k2 - sg.k1;
-      if (i === 0) t[0] += n; else if (i === 1) { t[0] += n; t[1] += n; } else if (i === 2) { t[1] += n; t[2] += n; } else { t[2] += n; t[3] += sg.ts; }
-      segs.push({ air: i + 1, k1: sg.k1, k2: sg.k2, pl: sg.pl });
+    var g = G(s), t = g.tapis.map(function () { return 0; }), segs = [];
+    g.aires.forEach(function (a, i) {
+      segsOf(s, i).forEach(function (sg) {
+        if (sg.lot !== id) return;
+        g.tapis.forEach(function (tp, ti) {
+          var n = (tp.A === i ? 1 : 0) + (tp.B === i ? 1 : 0);
+          if (n) t[ti] += n * recouvre(sg.k1, sg.k2, tp.c0, tp.c0 + tp.len);
+        });
+        segs.push({ air: i + 1, k1: sg.k1, k2: sg.k2, pl: sg.pl });
+      });
     });
-    return { t: t, P: t[0] + t[1] + t[2] + t[3], segs: segs };
+    return { t: t, P: t.reduce(function (a, b) { return a + b; }, 0), segs: segs };
   }
-  /* lot de l'aire i à la colonne k */
+  /* lot de l'aire i à la colonne k (null hors de l'aire) */
   function lotAt(s, i, k) {
     var ks = ksOf(s, i), ls = s.airs[i].lots;
+    if (k < ks[0] || k >= ks[ks.length - 1]) return null;
     for (var j = 0; j < ks.length - 1; j++) if (k >= ks[j] && k < ks[j + 1]) return ls[j];
-    return ls[ls.length - 1];
+    return null;
   }
-  /* lot devant la place c du tapis simple (le long de l'aire 4) */
-  function lotAtTS(s, c) {
-    var sg = segsOf(s, 3);
-    for (var j = 0; j < sg.length; j++) {
-      var c1 = cumT(sg[j].k1), c2 = sg[j].isLast ? TS_PL : cumT(sg[j].k2);
-      if (c >= c1 && c < c2) return sg[j].lot;
-    }
-    return sg[sg.length - 1].lot;
+  /* lots des côtés à la position k (locale) du tapis t ; b = null pour un tapis simple */
+  function cotes(s, t, k) {
+    var tp = G(s).tapis[t], col = tp.c0 + k;
+    return { a: tp.A == null ? null : lotAt(s, tp.A, col), b: tp.double ? lotAt(s, tp.B, col) : null };
   }
-  /* lots des 2 côtés à la position k du tapis t (b = null pour le tapis simple) */
-  function cotes(s, t, k) { return t < 3 ? { a: lotAt(s, t, k), b: lotAt(s, t + 1, k) } : { a: lotAtTS(s, k), b: null }; }
 
   /* ---- 1. rations voulues → plan des trémies ---- */
   function voulue(l, fid) { return (l && l.obj && l.obj[fid]) || 0; }              /* kg/brebis/j */
@@ -80,17 +157,16 @@
   }
   /* bornes d'un tapis : union des barrières des aires qui le bordent */
   function bornes(s, t) {
-    var bs = t < 3
-      ? s.airs[t].barriers.concat(s.airs[t + 1].barriers)
-      : segsOf(s, 3).map(function (sg) { return cumT(sg.k1); });
-    bs = bs.filter(function (k) { return k > 0 && k < NB_POS[t]; });
+    var tp = G(s).tapis[t], bs = [];
+    [tp.A, tp.B].forEach(function (ai) { if (ai != null) s.airs[ai].barriers.forEach(function (k) { bs.push(k - tp.c0); }); });
+    bs = bs.filter(function (k) { return k > 0 && k < tp.len; });
     return bs.filter(function (v, ix) { return bs.indexOf(v) === ix; }).sort(function (a, b) { return a - b; });
   }
   /* plan calculé : [tapis][plage] = {k1, k2, d:{fid: kg par position}} */
   function planVoulu(s) {
     var out = [];
-    for (var t = 0; t < 4; t++) {
-      var ks = [0].concat(bornes(s, t), [NB_POS[t]]), rs = [];
+    for (var t = 0; t < nbTapis(s); t++) {
+      var ks = [0].concat(bornes(s, t), [nbPos(s, t)]), rs = [];
       for (var j = 0; j < ks.length - 1; j++) {
         var k1 = ks[j], k2 = ks[j + 1]; if (k2 <= k1) continue;
         var c = cotes(s, t, k1), la = lotById(s, c.a), lb = c.b == null ? null : lotById(s, c.b), d = {};
@@ -124,9 +200,9 @@
      ecartCalcul = (trémies figées) la dose diffère de ce que donneraient les rations voulues aujourd'hui. */
   function plages(s) {
     var p = plan(s), pv = s.fige ? planVoulu(s) : p, out = [];
-    for (var t = 0; t < 4; t++) {
+    for (var t = 0; t < nbTapis(s); t++) {
       var cut = bornes(s, t).concat(p[t].map(function (r) { return r.k1; }));
-      var ks = [0].concat(cut.filter(function (v, ix) { return v > 0 && cut.indexOf(v) === ix; }).sort(function (a, b) { return a - b; }), [NB_POS[t]]), rs = [];
+      var ks = [0].concat(cut.filter(function (v, ix) { return v > 0 && v < nbPos(s, t) && cut.indexOf(v) === ix; }).sort(function (a, b) { return a - b; }), [nbPos(s, t)]), rs = [];
       for (var j = 0; j < ks.length - 1; j++) {
         var k1 = ks[j], k2 = ks[j + 1]; if (k2 <= k1) continue;
         var c = cotes(s, t, k1), d = doseAt(p[t], k1);
@@ -150,9 +226,9 @@
       x.places++;
       s.feeds.forEach(function (f) { x.kg[f.id] += (d[f.id] || 0) * fr; });
     }
-    for (var t = 0; t < 4; t++) for (var k = 0; k < NB_POS[t]; k++) {
+    for (var t = 0; t < nbTapis(s); t++) for (var k = 0; k < nbPos(s, t); k++) {
       var c = cotes(s, t, k), d = doseAt(p[t], k);
-      if (t < 3) { ajoute(c.a, d, 0.5); ajoute(c.b, d, 0.5); } else ajoute(c.a, d, 1);
+      if (estDouble(s, t)) { ajoute(c.a, d, 0.5); ajoute(c.b, d, 0.5); } else ajoute(c.a, d, 1);
     }
     return o;
   }
@@ -196,7 +272,7 @@
   function nPesee(s) { return (s.distrib && s.distrib.pesee > 0) ? s.distrib.pesee : 10; }
   function pesee(s, d) { return nPesee(s) * d / repas(s); }
   function depuisPesee(s, kg) { return kg * repas(s) / nPesee(s); }
-  function parPlaceRepas(s, t, d) { return d / (t < 3 ? 2 : 1) / repas(s); }
+  function parPlaceRepas(s, t, d) { return d / (estDouble(s, t) ? 2 : 1) / repas(s); }
 
   /* ---- opérations ---- */
   function setEffectif(l, nb) { l.b = Math.max(0, Math.round(nb) || 0); return l.b; }
@@ -223,7 +299,7 @@
   /* même dose partout pour un aliment (kg par place et par rangée) — « 500 g à tout le monde » */
   function doseUnique(s, fid, kgPlace) {
     if (!s.fige) figer(s);
-    for (var t = 0; t < 4; t++) { s.fige.tapis[t].forEach(function (r) { r.d[fid] = (t < 3 ? 2 : 1) * Math.max(0, kgPlace); }); s.fige.tapis[t] = fusion(s.fige.tapis[t]); }
+    for (var t = 0; t < nbTapis(s); t++) { s.fige.tapis[t].forEach(function (r) { r.d[fid] = (estDouble(s, t) ? 2 : 1) * Math.max(0, kgPlace); }); s.fige.tapis[t] = fusion(s.fige.tapis[t]); }
   }
   function deleteFeed(s, id) {
     s.feeds = s.feeds.filter(function (x) { return x.id !== id; });
@@ -239,7 +315,25 @@
     return { v: 6, nextLot: 1, nextFeed: 1, pref: 'per', tol: { vert: 5, orange: 15, parAliment: true }, distrib: { repas: 2, pesee: 10 }, fige: null,
       feeds: [{ id: 0, name: 'Aliment' }],
       lots: [{ id: 0, b: 0, obj: {}, name: null }],
+      geo: geoDefaut(),
       airs: [0, 1, 2, 3].map(function () { return { barriers: [], lots: [0] }; }) };
+  }
+  /* changer le plan de la bergerie : les aires gardent leurs lots et barrières (repérées par leur id),
+     les barrières hors de l'aire sont retirées ; trémies figées → à régler de nouveau (le plan a changé). */
+  function setGeo(s, geo) {
+    var e = verifGeo(geo); if (e.length) return e;
+    var old = G(s), nw = geoInfo(geo), def = s.lots.length ? s.lots[0].id : 0, airs = [];
+    nw.aires.forEach(function (a) {
+      var oi = -1; old.aires.forEach(function (o, ix) { if (o.id === a.id) oi = ix; });
+      var src = oi >= 0 ? s.airs[oi] : { barriers: [], lots: [def] };
+      var bs = [], ls = [src.lots[0]];
+      var f = nw.plm / old.plm;   /* places par mètre changées : la barrière reste au même endroit en mètres */
+      src.barriers.forEach(function (k0, p) { var k = Math.round(k0 * f); if (k > a.c0 && k < a.c0 + a.len && bs.indexOf(k) < 0) { bs.push(k); ls.push(src.lots[p + 1]); } });
+      airs.push({ barriers: bs, lots: ls });
+    });
+    s.geo = JSON.parse(JSON.stringify(geo)); s.airs = airs;
+    if (s.fige) s.fige = null;
+    return [];
   }
 
   /* ---- ancienne version (v8, données bergerie_lots_v5) : sert à reprendre les données ---- */
@@ -339,7 +433,11 @@
   }
 
   /* ---- validation / import / export ---- */
-  function formeOk(o) { return !!(o && Array.isArray(o.lots) && Array.isArray(o.feeds) && Array.isArray(o.airs) && o.airs.length === 4); }
+  function formeOk(o) {
+    if (!(o && Array.isArray(o.lots) && Array.isArray(o.feeds) && Array.isArray(o.airs))) return false;
+    if (o.geo) return verifGeo(o.geo).length === 0 && o.airs.length === geoInfo(o.geo).aires.length;
+    return o.airs.length === 4;
+  }
   function isState(o) { return formeOk(o) && o.v === 6; }
   function normalize(s) {
     var mL = 0, mF = 0;
@@ -352,6 +450,7 @@
     s.tol = s.tol || { vert: 5, orange: 15 };
     if (s.tol.parAliment === undefined) s.tol.parAliment = true;
     s.distrib = s.distrib || { repas: 2, pesee: 10 };
+    s.geo = s.geo || geoDefaut();
     if (s.fige === undefined) s.fige = null;
     return s;
   }
@@ -374,10 +473,11 @@
   function exportJson(s, date) { return JSON.stringify({ app: 'bergerie-lots', v: 6, date: (date || new Date()).toISOString(), state: s }); }
 
   var M = {
-    PL_M: PL_M, DBL_PL: DBL_PL, TS_PL: TS_PL, DBL_X0: DBL_X0, DBL_LEN: DBL_LEN, TS_LEN: TS_LEN, NB_POS: NB_POS,
+    PL_M: PL_M, DBL_PL: DBL_PL, TS_PL: TS_PL,
+    geoDefaut: geoDefaut, geoInfo: geoInfo, G: G, nbTapis: nbTapis, nbPos: nbPos, estDouble: estDouble, plm: plm, verifGeo: verifGeo, setGeo: setGeo,
     KEY: KEY, KEY5: KEY5, KEYOLD: KEYOLD,
-    xOfK: xOfK, cumT: cumT, ksOf: ksOf, tsOf: tsOf, segsOf: segsOf, lotById: lotById, lotStats: lotStats,
-    lotAt: lotAt, lotAtTS: lotAtTS, cotes: cotes,
+    xOfK: xOfK, cumT: cumT, ksOf: ksOf, segsOf: segsOf, lotById: lotById, lotStats: lotStats,
+    lotAt: lotAt, cotes: cotes,
     voulue: voulue, voulueTot: voulueTot, part: part, bornes: bornes, planVoulu: planVoulu, plan: plan, doseAt: doseAt,
     plages: plages, recu: recu, bilan: bilan, bilans: bilans,
     setEffectif: setEffectif, setVoulue: setVoulue, setVoulueKg: setVoulueKg, applyToAll: applyToAll,

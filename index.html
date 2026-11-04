@@ -115,6 +115,14 @@
   .chip{border-radius:999px;padding:9px 15px;border:2px solid transparent;font-weight:600;background:var(--doux);font-size:15px}
   .chip.on{border-color:var(--encre)}
 
+  /* éditeur du plan */
+  .bande{border-left:6px solid var(--ligne)}
+  .bande.t-aire{border-left-color:#e0cfa6}.bande.t-double,.bande.t-simple{border-left-color:#8fb88a}.bande.t-couloir{border-left-color:#b9cdb6}
+  .bande .champs{display:flex;flex-wrap:wrap;gap:10px 14px;margin-top:8px}
+  .bande label{display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--muet);font-weight:600}
+  .bande .champ{width:96px;height:42px;font-size:17px}
+  #geoApercu{width:100%;display:block;background:#ebe4d3;border-radius:12px}
+  .erreur{color:var(--hors);font-size:14px;font-weight:600;margin:4px 0;display:flex;gap:8px;align-items:flex-start}
   /* fiche de réglage */
   .fiche{max-width:820px;margin:0 auto}
   .fiche .titre{background:var(--vert);color:#fff;border-radius:16px;padding:16px 18px;margin:6px 0 12px}
@@ -178,18 +186,22 @@
   <section class="vue" id="v-controle"></section>
   <section class="vue" id="v-reglages"></section>
   <section class="vue" id="v-fiche"></section>
+  <section class="vue" id="v-geo"></section>
 </main>
 <nav id="nav"></nav>
 
-<script src="modele.js?v=12"></script>
-<script src="stockage.js?v=12"></script>
+<script src="modele.js?v=13"></script>
+<script src="stockage.js?v=13"></script>
 <script>
 'use strict';
 var M=window.Bergerie,S=window.Stockage;
-var L=35,W=22,DBL_PL=M.DBL_PL,TS_PL=M.TS_PL,DBL_X0=M.DBL_X0,DBL_LEN=M.DBL_LEN,DBL_END=DBL_X0+DBL_LEN,TS_END=M.TS_LEN;
-var AIRES=[{y:0.0,h:4.3,lab:'Aire 1'},{y:5.0,h:4.3,lab:'Aire 2'},{y:10.0,h:4.3,lab:'Aire 3'},{y:15.0,h:4.3,lab:'Aire 4'}];
-var TAPIS=[{y:4.3,h:0.7,x1:DBL_END,lab:'Tapis double 1'},{y:9.3,h:0.7,x1:DBL_END,lab:'Tapis double 2'},{y:14.3,h:0.7,x1:DBL_END,lab:'Tapis double 3'},{y:19.3,h:0.7,x1:TS_END,lab:'Tapis simple'}];
-var NOMS_TAPIS=['Tapis double 1','Tapis double 2','Tapis double 3','Tapis simple'];
+/* géométrie : celle de l'état (state.geo), dépliée par le modèle */
+var L=35,W=22;
+function GI(){return M.G(state);}
+function syncGeo(){var g=GI();L=g.L;W=g.W;}
+function X(col){return col/GI().plm;}
+function nomTapis(t){return GI().tapis[t].nom||('Tapis '+(t+1));}
+function nomAire(i){return GI().aires[i].nom||('Aire '+(i+1));}
 var LOT_COLS=['#a8d5b0','#f5cfa0','#a9cbe8','#f2b8cf','#e8e0a0','#c9b8e8','#9fd9c8','#f0b9a0'];
 var FEED_COLS=['#6a994e','#d9a441','#7b6cbf','#4d8fd1','#c96a5b','#3ba99c','#b5853f','#8a8f5a'];
 var NIV={ok:'correct',attention:'à surveiller',hors:'hors norme',vide:'—'};
@@ -279,13 +291,14 @@ function render(){
   if(a&&a.id&&a.tagName==='INPUT')keep={id:a.id,v:a.value,s:a.selectionStart,e:a.selectionEnd};
   var bs=M.bilans(state);
   renderHeader();renderNav(bs);
-  ['plan','rations','tremies','controle','reglages','fiche'].forEach(function(v){$('v-'+v).classList.toggle('on',v===vue);});
-  ['rations','tremies','controle','reglages','fiche'].forEach(function(v){if(v!==vue)$('v-'+v).innerHTML='';});
-  if(vue==='plan'){renderMap(bs);renderPlanBas(bs);}
+  ['plan','rations','tremies','controle','reglages','fiche','geo'].forEach(function(v){$('v-'+v).classList.toggle('on',v===vue);});
+  ['rations','tremies','controle','reglages','fiche','geo'].forEach(function(v){if(v!==vue)$('v-'+v).innerHTML='';});
+  if(vue==='plan'){syncGeo();$('mapWrap').style.aspectRatio=(L+0.8)+'/'+(W+1.2);renderMap(bs);renderPlanBas(bs);}
   else if(vue==='rations')$('v-rations').innerHTML=rationsHtml(bs);
   else if(vue==='tremies')$('v-tremies').innerHTML=tremiesHtml();
   else if(vue==='controle')$('v-controle').innerHTML=controleHtml(bs);
   else if(vue==='fiche')$('v-fiche').innerHTML=ficheHtml(bs);
+  else if(vue==='geo')$('v-geo').innerHTML=geoHtml();
   else $('v-reglages').innerHTML=reglagesHtml();
   if(keep){var el=$(keep.id);if(el){el.value=keep.v;el.focus();try{el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
@@ -299,10 +312,10 @@ function renderNav(bs){
   var t=[['plan','plan','Plan'],['rations','ration','Rations'],['tremies','hopper','Trémies'],['controle','ctrl','Contrôle'],['reglages','gear','Réglages']];
   $('nav').innerHTML=t.map(function(x){
     var al=x[0]==='controle'&&(w==='attention'||w==='hors')?'<span class="alerte" style="background:var(--'+(w==='hors'?'hors':'att')+')"></span>':'';
-    return '<button data-vue="'+x[0]+'" class="'+(vue===x[0]||(vue==='fiche'&&x[0]==='tremies')?'on':'')+'">'+ic(x[1],22)+'<span>'+x[2]+'</span>'+al+'</button>';
+    return '<button data-vue="'+x[0]+'" class="'+(vue===x[0]||(vue==='fiche'&&x[0]==='tremies')||(vue==='geo'&&x[0]==='reglages')?'on':'')+'">'+ic(x[1],22)+'<span>'+x[2]+'</span>'+al+'</button>';
   }).join('');
 }
-function goVue(v){vue=v;sel=null;arm=null;editName=null;editFeed=null;editDose=null;showUnique=false;try{localStorage.setItem('bergerie_vue',v);}catch(e){}render();$('v-'+v).scrollTop=0;document.querySelector('main').scrollTop=0;if(v==='plan')setTimeout(fitView,0);}
+function goVue(v){if(v==='geo'&&vue!=='geo')geoDraft=JSON.parse(JSON.stringify(state.geo));vue=v;sel=null;arm=null;editName=null;editFeed=null;editDose=null;showUnique=false;try{localStorage.setItem('bergerie_vue',v);}catch(e){}render();$('v-'+v).scrollTop=0;document.querySelector('main').scrollTop=0;if(v==='plan')setTimeout(fitView,0);}
 
 /* ============ PLAN ============ */
 var svg=$('map');
@@ -310,8 +323,9 @@ var view={x:0,y:0,w:35.8,h:23.2};
 function setVB(){svg.setAttribute('viewBox',view.x+' '+view.y+' '+view.w+' '+view.h);}
 function fitView(){
   var r=svg.getBoundingClientRect();if(!r.width)return;
-  var s=Math.min(r.width/35.8,Math.max(r.height,1)/23.2);
-  view.w=r.width/s;view.h=r.height/s;view.x=17.5-view.w/2;view.y=11-view.h/2;setVB();
+  syncGeo();
+  var bw=L+0.8,bh=W+1.2,s=Math.min(r.width/bw,Math.max(r.height,1)/bh);
+  view.w=r.width/s;view.h=r.height/s;view.x=L/2-view.w/2;view.y=W/2-view.h/2;setVB();
 }
 function clampView(){var cx=view.x+view.w/2,cy=view.y+view.h/2;cx=Math.max(-4,Math.min(L+4,cx));cy=Math.max(-3,Math.min(W+3,cy));view.x=cx-view.w/2;view.y=cy-view.h/2;}
 function zoomAt(cx,cy,f){
@@ -325,24 +339,18 @@ var NIVCOL={ok:'#2f7d4a',attention:'#c77a12',hors:'#c0392f',vide:'#9a9187'};
 function renderMap(bs){
   bs=bs||M.bilans(state);
   var bm={};bs.forEach(function(b){bm[b.id]=b;});
-  var o=[];
-  o.push('<rect x="0" y="0" width="'+L+'" height="'+W+'" fill="#f0ead9"/>');
-  o.push('<rect x="0" y="20" width="'+L+'" height="2" fill="#e7efe4" stroke="#b9cdb6" stroke-width="0.06"/>');
-  o.push('<text x="'+(L/2)+'" y="21.25" font-size="0.85" fill="#6f8a6b" text-anchor="middle">Couloir d’alimentation</text>');
-  AIRES.forEach(function(b){o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#f6efdd" stroke="#cfc7b8" stroke-width="0.05"/>');});
-  TAPIS.forEach(function(b){
-    o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#e6ddca"/>');
-    o.push('<rect x="0" y="'+b.y+'" width="'+b.x1+'" height="'+b.h+'" fill="#d7e5d2" stroke="#cfc7b8" stroke-width="0.05"/>');
-  });
-  AIRES.forEach(function(b,i){
+  syncGeo();
+  var g=GI(),o=[];
+  o.push(planFond(state.geo));
+  g.aires.forEach(function(b,i){
     M.segsOf(state,i).forEach(function(sg){
-      var left=M.xOfK(sg.k1),right=sg.isLast?L:M.xOfK(sg.k2);if(right-left<=0)return;
+      var left=X(sg.k1),right=X(sg.k2);if(right-left<=0)return;
       o.push('<rect x="'+left+'" y="'+b.y+'" width="'+(right-left)+'" height="'+b.h+'" fill="'+lotCol(sg.lot)+'" opacity="0.6"/>');
       if(sel&&sel.t==='seg'&&sel.i===i&&sel.j===sg.j)o.push('<rect x="'+left+'" y="'+(b.y-0.05)+'" width="'+(right-left)+'" height="'+(b.h+0.1)+'" fill="none" stroke="#2f6b43" stroke-width="0.24"/>');
-      var cx=(left+right)/2,w=right-left,lo=lotById(sg.lot),bl=bm[sg.lot];
+      var cx=(left+right)/2,w=right-left,lo=lotById(sg.lot),bl=bm[sg.lot],fs=Math.min(0.8,b.h*0.2);
       if(w>=1.8){
-        o.push('<text x="'+cx+'" y="'+(b.y+b.h/2-0.15)+'" font-size="0.8" font-weight="700" fill="#2b3527" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.14" stroke-opacity="0.9">'+esc(lotShort(lo))+'</text>');
-        if(bl&&bl.b>0&&w>=3.4){
+        o.push('<text x="'+cx+'" y="'+(b.y+b.h/2-0.15)+'" font-size="'+fs+'" font-weight="700" fill="#2b3527" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.14" stroke-opacity="0.9">'+esc(lotShort(lo))+'</text>');
+        if(bl&&bl.b>0&&w>=3.4&&b.h>=2.4){
           var l2=bl.b+' têtes · '+gr(bl.recu)+' g/j',hw=l2.length*0.155;
           o.push('<circle cx="'+(cx-hw-0.15)+'" cy="'+(b.y+b.h/2+0.66)+'" r="0.24" fill="'+NIVCOL[bl.niveau]+'"/>');
           o.push('<text x="'+(cx+0.2)+'" y="'+(b.y+b.h/2+0.86)+'" font-size="0.6" font-weight="600" fill="#433d36" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.85">'+l2+'</text>');
@@ -350,33 +358,55 @@ function renderMap(bs){
       }
     });
   });
-  AIRES.forEach(function(b){o.push('<text x="0.45" y="'+(b.y+0.85)+'" font-size="0.72" fill="#958a77" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');});
-  TAPIS.forEach(function(b,tix){
-    o.push('<text x="0.4" y="'+(b.y+0.28)+'" font-size="0.42" fill="#4f6b4a" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');
-    var maxK=(tix===3?TS_PL:DBL_PL);
-    for(var kk=10;kk<maxK-4;kk+=10){
-      var tx=M.xOfK(kk);
-      o.push('<line x1="'+tx+'" y1="'+(b.y+0.38)+'" x2="'+tx+'" y2="'+(b.y+0.66)+'" stroke="#a3b89f" stroke-width="0.045"/>');
-      o.push('<text x="'+tx+'" y="'+(b.y+0.64)+'" font-size="0.36" fill="#54704f" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.08" stroke-opacity="0.8">'+kk+'</text>');
-    }
-    o.push('<text x="'+(b.x1-0.15)+'" y="'+(b.y+0.64)+'" font-size="0.36" font-weight="700" fill="#54704f" text-anchor="end" paint-order="stroke" stroke="#fff" stroke-width="0.08" stroke-opacity="0.8">'+maxK+'</text>');
-  });
-  AIRES.forEach(function(b,i){
+  o.push(planTextes(state.geo));
+  g.aires.forEach(function(b,i){
     var ab=state.airs[i];
     ab.barriers.forEach(function(k,p){
       var drag=(gest&&gest.mode==='bar'&&gest.bar&&gest.bar.i===i&&gest.bar.p===p);
-      var x=M.xOfK(k),isSel=(sel&&sel.t==='bar'&&sel.i===i&&sel.p===p)||drag,sc=isSel?'#e3812f':'#a34e37';
+      var x=X(k),isSel=(sel&&sel.t==='bar'&&sel.i===i&&sel.p===p)||drag,sc=isSel?'#e3812f':'#a34e37';
       o.push('<line x1="'+x+'" y1="'+b.y+'" x2="'+x+'" y2="'+(b.y+b.h)+'" stroke="'+sc+'" stroke-width="'+(isSel?0.3:0.2)+'" stroke-dasharray="0.55 0.35"/>');
       o.push('<circle cx="'+x+'" cy="'+(b.y+b.h/2)+'" r="'+(isSel?0.58:0.46)+'" fill="'+sc+'" stroke="#fff" stroke-width="0.09"/>');
       if(isSel){
-        var g=k-(p===0?0:ab.barriers[p-1]),d=(p===ab.barriers.length-1?DBL_PL:ab.barriers[p+1])-k;
+        var gg=k-(p===0?b.c0:ab.barriers[p-1]),d=(p===ab.barriers.length-1?b.c0+b.len:ab.barriers[p+1])-k;
         o.push('<text x="'+x+'" y="'+(b.y+0.55)+'" font-size="0.6" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">col. '+k+'</text>');
-        o.push('<text x="'+x+'" y="'+(b.y+1.2)+'" font-size="0.5" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">'+g+' pl | '+d+' pl</text>');
+        o.push('<text x="'+x+'" y="'+(b.y+1.2)+'" font-size="0.5" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">'+gg+' col. | '+d+' col.</text>');
       }
     });
   });
-  o.push('<rect x="0" y="0" width="'+L+'" height="'+W+'" fill="none" stroke="#7a6f63" stroke-width="0.16"/>');
   svg.innerHTML=o.join('');
+}
+/* fond du plan d'après une géométrie : bandes, aires, tapis (règle graduée), couloirs */
+function planFond(geo){
+  var g=M.geoInfo(geo),o=[],Lg=g.L,pm=g.plm;
+  o.push('<rect x="0" y="0" width="'+Lg+'" height="'+g.W+'" fill="#ebe4d3"/>');
+  geo.bandes.forEach(function(b,ix){
+    var y=0;for(var q=0;q<ix;q++)y+=geo.bandes[q].h;
+    if(b.type==='couloir'){o.push('<rect x="0" y="'+y+'" width="'+Lg+'" height="'+b.h+'" fill="#e7efe4" stroke="#b9cdb6" stroke-width="0.06"/>');return;}
+    if(b.type==='aire'){o.push('<rect x="'+(b.c0/pm)+'" y="'+y+'" width="'+(b.len/pm)+'" height="'+b.h+'" fill="#f6efdd" stroke="#cfc7b8" stroke-width="0.05"/>');return;}
+    o.push('<rect x="'+(b.c0/pm)+'" y="'+y+'" width="'+(b.len/pm)+'" height="'+b.h+'" fill="#d7e5d2" stroke="#cfc7b8" stroke-width="0.05"/>');
+  });
+  return o.join('');
+}
+function planTextes(geo){
+  var g=M.geoInfo(geo),o=[],pm=g.plm;
+  g.aires.forEach(function(b){o.push('<text x="'+(b.c0/pm+0.45)+'" y="'+(b.y+Math.min(0.85,b.h*0.3))+'" font-size="'+Math.min(0.72,b.h*0.22)+'" fill="#958a77" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.75">'+esc(b.nom||'')+'</text>');});
+  g.tapis.forEach(function(b){
+    var x0=b.c0/pm,fz=Math.min(0.42,b.h*0.6);
+    o.push('<text x="'+(x0+0.4)+'" y="'+(b.y+b.h*0.4)+'" font-size="'+fz+'" fill="#4f6b4a" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.75">'+esc(b.nom||'')+'</text>');
+    for(var kk=10;kk<b.len-4;kk+=10){
+      var tx=x0+kk/pm;
+      o.push('<line x1="'+tx+'" y1="'+(b.y+b.h*0.54)+'" x2="'+tx+'" y2="'+(b.y+b.h*0.94)+'" stroke="#a3b89f" stroke-width="0.045"/>');
+      o.push('<text x="'+tx+'" y="'+(b.y+b.h*0.91)+'" font-size="'+(fz*0.86)+'" fill="#54704f" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.08" stroke-opacity="0.8">'+kk+'</text>');
+    }
+    o.push('<text x="'+(x0+b.len/pm-0.15)+'" y="'+(b.y+b.h*0.91)+'" font-size="'+(fz*0.86)+'" font-weight="700" fill="#54704f" text-anchor="end" paint-order="stroke" stroke="#fff" stroke-width="0.08" stroke-opacity="0.8">'+b.len+'</text>');
+  });
+  geo.bandes.forEach(function(b,ix){
+    if(b.type!=='couloir')return;
+    var y=0;for(var q=0;q<ix;q++)y+=geo.bandes[q].h;
+    o.push('<text x="'+(g.L/2)+'" y="'+(y+b.h/2+0.3)+'" font-size="'+Math.min(0.85,b.h*0.42)+'" fill="#6f8a6b" text-anchor="middle">'+esc(b.nom||'Couloir')+'</text>');
+  });
+  o.push('<rect x="0" y="0" width="'+g.L+'" height="'+g.W+'" fill="none" stroke="#7a6f63" stroke-width="0.16"/>');
+  return o.join('');
 }
 function chipsHtml(cur){
   return state.lots.map(function(l){return '<button class="chip'+(l.id===cur?' on':'')+'" data-act="assign" data-lot="'+l.id+'" style="background:'+lotCol(l.id)+'">'+esc(lotShort(l))+'</button>';}).join('')+
@@ -387,8 +417,8 @@ function renderPlanBas(bs){
   if(sel&&sel.t==='seg'){
     var i=sel.i,j=sel.j,sg=M.segsOf(state,i)[j];
     if(!sg){sel=null;}else{
-      var n=sg.k2-sg.k1,det=i===1||i===2?n+' col. × 2 tapis = '+sg.pl+' places':(i===0?n+' places au tapis 1':n+' + '+sg.ts+' (tapis simple) = '+sg.pl+' places');
-      h+='<div class="carte"><div class="ligne"><span class="nom sp">'+AIRES[i].lab+' · colonnes '+sg.k1+' à '+sg.k2+'</span><button class="ico" data-act="desel" aria-label="Fermer">'+ic('close')+'</button></div>'+
+      var det=sg.pl+' places à table · '+fmt((sg.k2-sg.k1)/GI().plm,1)+' m de long';
+      h+='<div class="carte"><div class="ligne"><span class="nom sp">'+esc(nomAire(i))+' · colonnes '+sg.k1+' à '+sg.k2+'</span><button class="ico" data-act="desel" aria-label="Fermer">'+ic('close')+'</button></div>'+
         '<div class="muet petit" style="margin:4px 0 10px">'+det+'</div><div class="ligne" style="gap:8px">'+chipsHtml(sg.lot)+'</div>'+
         '<div class="sep"></div><button class="btn" data-act="cut">'+ic('plus')+' Barrière au milieu</button></div>';
     }
@@ -396,8 +426,8 @@ function renderPlanBas(bs){
     var a=state.airs[sel.i],k=a.barriers[sel.p];
     if(k==null){sel=null;}else{
       var lL=lotById(a.lots[sel.p]),lR=lotById(a.lots[sel.p+1]);
-      var gL=k-(sel.p===0?0:a.barriers[sel.p-1]),gR=(sel.p===a.barriers.length-1?DBL_PL:a.barriers[sel.p+1])-k;
-      h+='<div class="carte"><div class="ligne"><span class="nom sp">Barrière · '+AIRES[sel.i].lab+', colonne '+k+'</span><button class="ico" data-act="desel" aria-label="Fermer">'+ic('close')+'</button></div>'+
+      var ga=GI().aires[sel.i],gL=k-(sel.p===0?ga.c0:a.barriers[sel.p-1]),gR=(sel.p===a.barriers.length-1?ga.c0+ga.len:a.barriers[sel.p+1])-k;
+      h+='<div class="carte"><div class="ligne"><span class="nom sp">Barrière · '+esc(nomAire(sel.i))+', colonne '+k+'</span><button class="ico" data-act="desel" aria-label="Fermer">'+ic('close')+'</button></div>'+
         '<div class="muet petit" style="margin:4px 0 10px">À gauche : '+esc(lotShort(lL))+' ('+gL+' col.) · à droite : '+esc(lotShort(lR))+' ('+gR+' col.)</div>'+
         '<div class="ligne"><button class="btn" data-act="barL">'+ic('left')+' 1 place</button><button class="btn" data-act="barR">1 place '+ic('right')+'</button><span class="sp"></span><button class="btn danger" data-act="barDel">'+ic('trash')+' Supprimer</button></div></div>';
     }
@@ -486,15 +516,16 @@ function tremiesHtml(){
         if(f&&editDose===key)val='<input class="champ num" id="doseIn" value="'+pk+'" inputmode="decimal" data-t="'+t+'" data-k1="'+r.k1+'" data-k2="'+r.k2+'" data-feed="'+fd.id+'"><span class="muet">kg</span><button class="ico" data-act="doseOk" aria-label="Valider">'+ic('check')+'</button>';
         else if(f)val='<button class="val num" data-act="dose" data-key="'+key+'">'+pk+'<small>kg</small></button>';
         else val='<span class="val num">'+pk+'<small>kg</small></span>';
-        var det='pesée sur '+M.nPesee(state)+(t<3?' positions ('+2*M.nPesee(state)+' places)':' places')+', un repas<br>'+
-          '<b class="num" style="color:var(--encre)">'+gr(M.parPlaceRepas(state,t,d))+'&nbsp;g</b> par place et par repas · '+dg+'&nbsp;g/j '+(t<3?'par position':'par place');
+        var dbl=M.estDouble(state,t);
+        var det='pesée sur '+M.nPesee(state)+(dbl?' positions ('+2*M.nPesee(state)+' places)':' places')+', un repas<br>'+
+          '<b class="num" style="color:var(--encre)">'+gr(M.parPlaceRepas(state,t,d))+'&nbsp;g</b> par place et par repas · '+dg+'&nbsp;g/j '+(dbl?'par position':'par place');
         var ec='';
         if(f&&r.ecartCalcul){var dv=M.doseAt(pv[t],r.k1)[fd.id]||0;if(fmt(M.pesee(state,dv),2)!==pk)ec='<div class="ecart">d’après les rations : '+fmt(M.pesee(state,dv),2)+' kg</div>';}
         lines+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span>'+val+'</div><div class="muet petit" style="margin:-4px 0 6px 22px;line-height:1.4">'+det+'</div>'+ec;
       });
       lines+='</div>';
     });
-    h+='<div class="carte"><div class="ligne"><span class="nom sp">'+NOMS_TAPIS[t]+'</span><span class="tag num">total '+fmt(tot,1)+' kg</span></div>'+lines+'</div>';
+    h+='<div class="carte"><div class="ligne"><span class="nom sp">'+esc(nomTapis(t))+'</span><span class="tag num">total '+fmt(tot,1)+' kg</span></div>'+lines+'</div>';
   });
   h+='<div class="carte ligne"><span class="muet sp">À verser au total</span><span class="moyen num">'+fmt(grand,1)+' kg</span></div>';
   h+='<div class="hint">En gros : le poids à trouver à la pesée de réglage, sur '+M.nPesee(state)+' positions et pour un repas ('+M.repas(state)+' repas par jour, modifiable dans Réglages). Places numérotées depuis la gauche. La trémie verse au milieu du tapis double : une seule dose pour les 2 rangées, chaque rangée en reçoit la moitié. Impossible de séparer la ration de 2 lots face à face.</div>';
@@ -506,7 +537,7 @@ function gtxt(x){return fmt(x,Math.abs(x-Math.round(x))<1e-9?0:1)+' g';}
 function kgtxt(x){return fmt(x,2)+' kg';}
 function ficheHtml(bs){
   var R=M.repas(state),N=M.nPesee(state),f=state.fige,auj=new Date();
-  var lg=fmt(N/M.PL_M,2).replace(/,?0+$/,'');
+  var lg=fmt(N/M.plm(state),2).replace(/,?0+$/,'');
   var ex=410,exR=ex/R,exP=N*ex/R/1000,exB=ex/2/R;
   var h='<div class="fiche">';
   h+='<div class="ligne noprint" style="margin-bottom:6px"><button class="btn" data-vue="tremies">'+ic('left')+' Retour</button><span class="sp"></span><button class="btn prim" data-act="print">'+ic('dl')+' Imprimer ou PDF</button></div>';
@@ -537,11 +568,11 @@ function ficheHtml(bs){
       lignes+='<tr class="pl"><td colspan="4">Places '+(r.k1+1)+' à '+r.k2+' · '+who+'</td></tr>';
       state.feeds.forEach(function(fd){
         var d=r.d[fd.id]||0;if(d<=0.0005)return;
-        lignes+='<tr><td><span class="dot" style="background:'+feedCol(fd.id)+';width:11px;height:11px;margin-right:6px"></span>'+esc(fd.name)+'</td><td class="pes num">'+kgtxt(M.pesee(state,d))+'</td><td class="num">'+gr(M.parPlaceRepas(state,t,d))+' g</td><td class="num">'+gr(d/(t<3?2:1))+' g</td></tr>';
+        lignes+='<tr><td><span class="dot" style="background:'+feedCol(fd.id)+';width:11px;height:11px;margin-right:6px"></span>'+esc(fd.name)+'</td><td class="pes num">'+kgtxt(M.pesee(state,d))+'</td><td class="num">'+gr(M.parPlaceRepas(state,t,d))+' g</td><td class="num">'+gr(d/(M.estDouble(state,t)?2:1))+' g</td></tr>';
       });
     });
     if(!lignes)return;
-    h+='<div class="tapisT">'+ic('hopper',18)+NOMS_TAPIS[t]+'</div><table class="ft"><tr><th>Aliment</th><th>À la pesée ('+N+' pos., 1 repas)</th><th>Par brebis et par repas</th><th>Par brebis et par jour</th></tr>'+lignes+'</table>';
+    h+='<div class="tapisT">'+ic('hopper',18)+esc(nomTapis(t))+'</div><table class="ft"><tr><th>Aliment</th><th>À la pesée ('+N+' pos., 1 repas)</th><th>Par brebis et par repas</th><th>Par brebis et par jour</th></tr>'+lignes+'</table>';
   });
 
   h+='<h3>Ce que reçoit chaque lot</h3><table class="ft"><tr><th>Lot</th><th>Têtes</th><th>Reçoit</th><th>Voulu</th><th>Écart</th></tr>';
@@ -553,6 +584,55 @@ function ficheHtml(bs){
   h+='</table>';
   h+='<div class="hint">Calculé par Ma bergerie le '+dateFr(auj.toISOString())+'. Tant que les trémies sont figées, bouger les lots ne change pas les réglages : refais une fiche après un recalcul. Marges : vert sous '+tf(state.tol.vert)+' %, orange sous '+tf(state.tol.orange)+' %.</div>';
   return h+'</div>';
+}
+
+/* ============ PLAN DE LA BERGERIE (éditeur) ============ */
+var geoDraft=null;
+var TYPES_B={aire:'Aire',double:'Tapis double',simple:'Tapis simple',couloir:'Couloir'};
+function mtxt(cols,pm){return fmt(cols/pm,2).replace(/,00$/,'').replace(/(,\d)0$/,'$1');}
+function geoHtml(){
+  var g=geoDraft,pm=g.plm,errs=M.verifGeo(g),gi=M.geoInfo(g),h='';
+  h+='<div class="ligne" style="margin-bottom:6px"><button class="btn" data-act="geoX">'+ic('left')+' Annuler</button><span class="sp"></span><button class="btn prim" data-act="geoOk"'+(errs.length?' disabled style="opacity:.45"':'')+'>'+ic('check')+' Enregistrer le plan</button></div>';
+  h+='<div class="carte"><svg id="geoApercu" viewBox="-0.4 -0.4 '+(gi.L+0.8)+' '+(gi.W+0.8)+'" preserveAspectRatio="xMidYMid meet">'+planFond(g)+planTextes(g)+'</svg>'+
+    '<div class="muet petit" style="margin-top:8px">'+mtxt(gi.L*pm,pm)+' × '+fmt(gi.W,1).replace(',0','')+' m · '+gi.aires.length+' aire(s) · '+gi.tapis.length+' tapis</div>'+
+    (errs.length?errs.map(function(e){return '<div class="erreur">'+ic('warn',16)+'<span>'+esc(e)+'</span></div>';}).join(''):'<div class="erreur" style="color:var(--ok)">'+ic('check',16)+'<span>Plan cohérent.</span></div>')+'</div>';
+  if(state.fige)h+='<div class="note">'+ic('lock',18)+'<span>Les trémies sont figées : enregistrer un nouveau plan les remettra « à régler » (une copie est gardée avant).</span></div>';
+  h+='<div class="carte"><div class="ligne"><span class="sp"><b>Places par mètre</b> le long des tapis</span><input class="champ num" id="g_plm" data-act="geo" data-f="plm" inputmode="numeric" value="'+pm+'" style="width:76px"></div></div>';
+  h+='<h2>Bandes, de haut en bas</h2><div class="muet petit" style="margin:-4px 2px 6px">Comme on voit la bergerie sur le plan. Les longueurs se mesurent depuis le mur de gauche.</div>';
+  g.bandes.forEach(function(b,ix){
+    var k='g_'+ix+'_',f='';
+    f+='<label>Nom<input class="champ txt" id="'+k+'nom" data-act="geo" data-ix="'+ix+'" data-f="nom" value="'+esc(b.nom||'')+'" style="min-width:150px;height:42px;font-size:16px"></label>';
+    if(b.type==='aire'){
+      f+='<label>Début (m)<input class="champ num" id="'+k+'c0" data-act="geo" data-ix="'+ix+'" data-f="c0m" inputmode="decimal" value="'+mtxt(b.c0,pm)+'"></label>';
+      f+='<label>Longueur (m)<input class="champ num" id="'+k+'len" data-act="geo" data-ix="'+ix+'" data-f="lenm" inputmode="decimal" value="'+mtxt(b.len,pm)+'"></label>';
+    }else if(b.type==='double'||b.type==='simple'){
+      f+='<label>Début (m)<input class="champ num" id="'+k+'c0" data-act="geo" data-ix="'+ix+'" data-f="c0m" inputmode="decimal" value="'+mtxt(b.c0,pm)+'"></label>';
+      f+='<label>'+(b.type==='double'?'Places par côté':'Places')+'<input class="champ num" id="'+k+'len" data-act="geo" data-ix="'+ix+'" data-f="len" inputmode="numeric" value="'+b.len+'"></label>';
+      f+='<label>Soit<span class="num" style="height:42px;display:flex;align-items:center;font-size:16px;color:var(--encre)">'+mtxt(b.len,pm)+' m</span></label>';
+    }
+    f+='<label>Largeur (m)<input class="champ num" id="'+k+'h" data-act="geo" data-ix="'+ix+'" data-f="h" inputmode="decimal" value="'+String(b.h).replace('.',',')+'"></label>';
+    var cote=b.type==='simple'?'<div class="ligne" style="margin-top:10px"><span class="petit sp">Les brebis mangent depuis l’aire</span><span class="seg"><button data-act="geoCote" data-ix="'+ix+'" data-v="haut" class="'+(b.cote!=='bas'?'on':'')+'">au-dessus</button><button data-act="geoCote" data-ix="'+ix+'" data-v="bas" class="'+(b.cote==='bas'?'on':'')+'">en dessous</button></span></div>':'';
+    var del='geo:'+ix;
+    h+='<div class="carte bande t-'+b.type+'"><div class="ligne"><b class="sp">'+TYPES_B[b.type]+'</b>'+
+      '<button class="ico" data-act="geoUp" data-ix="'+ix+'" aria-label="Monter"'+(ix===0?' disabled style="opacity:.35"':'')+'>'+ic('left',18).replace('M14.5 6l-6 6 6 6','M6 14.5l6-6 6 6')+'</button>'+
+      '<button class="ico" data-act="geoDown" data-ix="'+ix+'" aria-label="Descendre"'+(ix===g.bandes.length-1?' disabled style="opacity:.35"':'')+'>'+ic('left',18).replace('M14.5 6l-6 6 6 6','M6 9.5l6 6 6-6')+'</button>'+
+      '<button class="ico'+(arm===del?' danger':'')+'" data-act="geoDel" data-ix="'+ix+'" aria-label="Supprimer">'+(arm===del?'OK ?':ic('trash'))+'</button></div>'+
+      '<div class="champs">'+f+'</div>'+cote+'</div>';
+  });
+  h+='<div class="ligne" style="gap:8px;margin-top:6px">'+['aire','double','simple','couloir'].map(function(t){return '<button class="btn" data-act="geoAdd" data-type="'+t+'">'+ic('plus')+' '+TYPES_B[t]+'</button>';}).join('')+'</div>';
+  h+='<div class="ligne" style="margin-top:18px"><button class="btn'+(arm==='geoDef'?' danger':'')+'" data-act="geoDef">'+ic('reset')+(arm==='geoDef'?' Confirmer : plan par défaut':' Reprendre le plan par défaut (35 × 22 m)')+'</button></div>';
+  h+='<div class="hint">Un tapis double est toujours entre deux aires : chaque côté nourrit l’aire qui le touche. Un tapis simple nourrit l’aire au-dessus ou en dessous. Les lots et barrières des aires gardées sont conservés.</div>';
+  return h;
+}
+function geoNom(type){var n=geoDraft.bandes.filter(function(b){return b.type===type;}).length+1;return type==='couloir'?'Couloir':TYPES_B[type]+' '+n;}
+function geoAjout(type){
+  var pm=geoDraft.plm,ref=0;geoDraft.bandes.forEach(function(b){if(b.len!=null)ref=Math.max(ref,b.c0+b.len);});
+  var b={id:'b'+Date.now().toString(36)+Math.floor(Math.random()*1e4),type:type,nom:geoNom(type),h:type==='aire'?4:(type==='couloir'?2:0.7)};
+  if(type==='aire'){b.c0=0;b.len=ref||30*pm;}
+  else if(type!=='couloir'){b.c0=0;b.len=Math.max(1,Math.round((ref||30*pm)*0.9));if(type==='simple')b.cote='haut';}
+  /* avant le couloir du bas s'il y en a un */
+  var bb=geoDraft.bandes,last=bb[bb.length-1];
+  if(type!=='couloir'&&last&&last.type==='couloir')bb.splice(bb.length-1,0,b);else bb.push(b);
 }
 
 /* ============ CONTRÔLE ============ */
@@ -569,7 +649,8 @@ function controleHtml(bs){
     var l=lotById(b.id);
     if(!(b.b>0&&b.places>0)){h+='<div class="carte barre ligne"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>';return;}
     var parts=[];
-    for(var t=0;t<3;t++){var seen={};M.plages(state)[t].forEach(function(r){if(r.b!=null&&r.a!==r.b&&(r.a===l.id||r.b===l.id)){var o=r.a===l.id?r.b:r.a;if(!seen[o]){seen[o]=1;parts.push('tapis '+(t+1)+' avec '+lotShort(lotById(o)));}}});}
+    var pls=M.plages(state);
+    for(var t=0;t<pls.length;t++){var seen={};pls[t].forEach(function(r){if(r.b!=null&&r.a!=null&&r.a!==r.b&&(r.a===l.id||r.b===l.id)){var o=r.a===l.id?r.b:r.a;if(!seen[o]){seen[o]=1;parts.push(nomTapis(t)+' avec '+lotShort(lotById(o)));}}});}
     h+='<div class="carte barre n-'+b.niveau+'-b"><div class="ligne"><span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>'+causeHtml(b)+
       '<div class="ligne" style="margin:10px 0 4px;align-items:flex-end"><span class="gros num">'+gr(b.recu)+'</span><span class="muet" style="margin-bottom:3px">g/brebis/j reçus</span><span class="sp"></span><span class="muet" style="margin-bottom:3px">voulu <b class="num" style="color:var(--encre)">'+gr(b.voulu)+'</b></span></div>';
     state.feeds.forEach(function(f){
@@ -592,6 +673,9 @@ function reglagesHtml(){
     else h+='<div class="ligne" style="padding:5px 0"><span class="dot" style="background:'+feedCol(f.id)+'"></span><span class="sp" style="font-weight:600">'+esc(f.name)+'</span><button class="ico" data-act="feedRen" data-feed="'+f.id+'" aria-label="Renommer">'+ic('pen')+'</button><button class="ico'+(arm==='feed:'+f.id?' danger':'')+'" data-act="feedDel" data-feed="'+f.id+'" aria-label="Supprimer">'+(arm==='feed:'+f.id?'OK ?':ic('trash'))+'</button></div>';
   });
   h+='<div class="ligne" style="padding-top:8px"><input class="champ txt" id="newFeed" placeholder="Nouvel aliment"><button class="btn" data-act="feedAdd">'+ic('plus')+' Ajouter</button></div></div>';
+  var gi=GI(),plTot=gi.tapis.reduce(function(a,tp){return a+tp.len*(tp.double?2:1);},0);
+  h+='<h2>Plan de la bergerie</h2><div class="carte"><div class="ligne"><span class="sp"><b class="num">'+mtxt(gi.L*gi.plm,gi.plm)+' × '+fmt(gi.W,1).replace(',0','')+' m</b> · '+gi.aires.length+' aire'+(gi.aires.length>1?'s':'')+' · '+gi.tapis.length+' tapis · '+plTot+' places à table</span><button class="btn" data-vue="geo">'+ic('pen')+' Modifier le plan</button></div>'+
+    '<div class="muet petit" style="margin-top:8px">Les aires, les tapis et leurs longueurs, de haut en bas. À régler une fois, quand on installe l’appli.</div></div>';
   h+='<h2>Distribution</h2><div class="carte"><div class="ligne"><span class="sp">Repas par jour</span><input class="champ num" id="repasIn" data-act="distrib" inputmode="numeric" value="'+M.repas(state)+'" style="width:76px"></div>'+
     '<div class="ligne" style="margin-top:8px"><span class="sp">Pesée de réglage sur</span><input class="champ num" id="peseeIn" data-act="distrib" inputmode="numeric" value="'+M.nPesee(state)+'" style="width:76px"><span class="petit">positions</span></div>'+
     '<div class="muet petit" style="margin-top:8px">L’onglet Trémies affiche le poids à trouver quand tu pèses ce qui tombe sur ces positions en un repas (tapis double : 2 places par position).</div></div>';
@@ -600,7 +684,7 @@ function reglagesHtml(){
     '<div class="muet petit" style="margin-top:8px">Un fichier à garder, ou pour passer sur un autre téléphone.</div><div class="sep"></div>'+
     '<button class="btn" id="btnCopies" data-act="copies">'+ic('reset')+' Copies automatiques</button><div class="muet petit" style="margin-top:8px">Une par jour sur 7 jours, et une avant chaque remise à zéro, import ou restauration. Sur ce téléphone uniquement.</div><div id="copiesList"></div></div>';
   h+='<h2>Tout effacer</h2><div class="carte"><button class="btn'+(arm==='reset'?' danger':'')+'" id="btnReset" data-act="reset">'+ic(arm==='reset'?'warn':'trash')+(arm==='reset'?' Confirmer : tout effacer':' Remettre à zéro')+'</button><div class="muet petit" style="margin-top:8px">Une copie est gardée avant d’effacer.</div></div>';
-  h+='<div class="hint">Ma bergerie v12 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
+  h+='<div class="hint">Ma bergerie v13 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
   return h;
 }
 function renderCopies(){
@@ -659,6 +743,21 @@ document.addEventListener('click',function(e){
       break;
     case 'unique':showUnique=!showUnique;break;
     case 'print':window.print();return;
+    case 'geoX':geoDraft=null;goVue('reglages');return;
+    case 'geoOk':{
+      if(M.verifGeo(geoDraft).length)break;
+      var etaitFige=!!state.fige;
+      S.copieAvant(state,'changement-plan');
+      var er=M.setGeo(state,geoDraft);
+      if(er.length){setNotice(er[0],true);break;}
+      setNotice('Plan enregistré.'+(etaitFige?' Les trémies sont à régler de nouveau.':''));
+      save();geoDraft=null;sel=null;goVue('plan');setTimeout(fitView,0);return;
+    }
+    case 'geoAdd':geoAjout(b.getAttribute('data-type'));break;
+    case 'geoUp':case 'geoDown':{var ix=+b.getAttribute('data-ix'),j=ix+(a==='geoUp'?-1:1),bb=geoDraft.bandes;if(j<0||j>=bb.length)break;var tmp=bb[ix];bb[ix]=bb[j];bb[j]=tmp;break;}
+    case 'geoDel':{var ixd=+b.getAttribute('data-ix'),kd='geo:'+ixd;if(arm===kd){arm=null;geoDraft.bandes.splice(ixd,1);}else armer(kd);break;}
+    case 'geoCote':geoDraft.bandes[+b.getAttribute('data-ix')].cote=b.getAttribute('data-v');break;
+    case 'geoDef':if(arm==='geoDef'){arm=null;geoDraft=M.geoDefaut();}else armer('geoDef');break;
     case 'uniqueX':showUnique=false;break;
     case 'uniqueOk':
       state.feeds.forEach(function(fd){var el=$('uni_'+fd.id);if(el&&String(el.value).trim()!=='')M.doseUnique(state,fd.id,pnum(el.value)/1000);});
@@ -703,9 +802,25 @@ document.addEventListener('input',function(e){
   var l=lotById(+el.getAttribute('data-lot'));
   if(a==='eff'){if(String(el.value).trim()==='')return;M.setEffectif(l,pnum(el.value));}
   else if(a==='ration'){var f=+el.getAttribute('data-feed'),v=pnum(el.value);if(state.pref==='kg')M.setVoulueKg(l,f,v);else M.setVoulue(l,f,v/1000);}
+  else if(a==='geo'){
+    var fld=el.getAttribute('data-f'),gx=+el.getAttribute('data-ix'),pmo=geoDraft.plm;
+    if(fld==='plm'){
+      var np=Math.round(pnum(el.value));if(!(np>=1&&np<=10)||np===pmo)return;
+      geoDraft.bandes.forEach(function(bb){if(bb.len!=null){bb.c0=Math.round(bb.c0*np/pmo);bb.len=Math.max(1,Math.round(bb.len*np/pmo));}});
+      geoDraft.plm=np;
+    }else{
+      var bd=geoDraft.bandes[gx];
+      if(fld==='nom')bd.nom=el.value;
+      else if(fld==='c0m')bd.c0=Math.max(0,Math.round(pnum(el.value)*pmo));
+      else if(fld==='lenm')bd.len=Math.round(pnum(el.value)*pmo);
+      else if(fld==='len')bd.len=Math.round(pnum(el.value));
+      else if(fld==='h')bd.h=Math.round(pnum(el.value)*100)/100;
+    }
+    render();return;
+  }
   else if(a==='distrib'){
     var rp=Math.round(pnum($('repasIn').value)),np=Math.round(pnum($('peseeIn').value));
-    if(!(rp>=1&&rp<=10&&np>=1&&np<=DBL_PL))return;
+    if(!(rp>=1&&rp<=10&&np>=1&&np<=200))return;
     state.distrib={repas:rp,pesee:np};
   }
   else if(a==='tol'){
@@ -757,39 +872,39 @@ function doImport(file){
 function insertBarrier(i,k){
   var a=state.airs[i],p=0;
   while(p<a.barriers.length&&a.barriers[p]<k)p++;
-  var lo=p===0?1:a.barriers[p-1]+1,hi=p===a.barriers.length?DBL_PL-1:a.barriers[p]-1;
+  var ga=GI().aires[i],lo=p===0?ga.c0+1:a.barriers[p-1]+1,hi=p===a.barriers.length?ga.c0+ga.len-1:a.barriers[p]-1;
   if(lo>hi)return -1;
   k=Math.max(lo,Math.min(hi,k));
   a.barriers.splice(p,0,k);a.lots.splice(p+1,0,a.lots[p]);
   return p;
 }
 function addBarrier(i,j,k){
-  var a=state.airs[i],lo=j===0?1:a.barriers[j-1]+1,hi=j===a.barriers.length?DBL_PL-1:a.barriers[j]-1;
+  var a=state.airs[i],ga=GI().aires[i],lo=j===0?ga.c0+1:a.barriers[j-1]+1,hi=j===a.barriers.length?ga.c0+ga.len-1:a.barriers[j]-1;
   if(lo>hi){setNotice('Plus de place dans ce morceau.');render();return;}
   k=Math.max(lo,Math.min(hi,k));
   a.barriers.splice(j,0,k);a.lots.splice(j+1,0,a.lots[j]);
   sel={t:'bar',i:i,p:j};save();render();
 }
-function clampBar(i,p,k){var a=state.airs[i],lo=p===0?1:a.barriers[p-1]+1,hi=p===a.barriers.length-1?DBL_PL-1:a.barriers[p+1]-1;return Math.max(lo,Math.min(hi,k));}
+function clampBar(i,p,k){var a=state.airs[i],ga=GI().aires[i],lo=p===0?ga.c0+1:a.barriers[p-1]+1,hi=p===a.barriers.length-1?ga.c0+ga.len-1:a.barriers[p+1]-1;return Math.max(lo,Math.min(hi,k));}
 function moveBarrier(i,p,k){k=clampBar(i,p,k);if(k===state.airs[i].barriers[p])return;state.airs[i].barriers[p]=k;save();render();}
 function moveBarrierLive(i,p,k){k=clampBar(i,p,k);if(k===state.airs[i].barriers[p])return;state.airs[i].barriers[p]=k;save();renderMap();}
 function delBarrier(i,p){var a=state.airs[i];a.barriers.splice(p,1);a.lots.splice(p,2,a.lots[p]);sel=null;save();render();}
-function kFromX(x){return Math.max(1,Math.min(DBL_PL-1,Math.round((x-DBL_X0)/DBL_LEN*DBL_PL)));}
+function kFromX(x){return Math.round(x*GI().plm);}
 
 /* ============ gestes sur le plan ============ */
 function toSvg(cx,cy){var r=svg.getBoundingClientRect();return {x:view.x+((cx-r.left)/r.width)*view.w,y:view.y+((cy-r.top)/r.height)*view.h};}
-function aireAt(y){for(var i=0;i<4;i++){if(y>=AIRES[i].y-0.15&&y<=AIRES[i].y+AIRES[i].h+0.15)return i;}return -1;}
+function aireAt(y){var as=GI().aires;for(var i=0;i<as.length;i++){if(y>=as[i].y-0.15&&y<=as[i].y+as[i].h+0.15)return i;}return -1;}
 function hitBarrier(p){
   var ai=aireAt(p.y);if(ai<0)return null;
   var tol=16/svg.getBoundingClientRect().width*view.w,bp=-1,bd=1e9;
-  state.airs[ai].barriers.forEach(function(k,ix){var d=Math.abs(p.x-M.xOfK(k));if(d<tol&&d<bd){bd=d;bp=ix;}});
+  state.airs[ai].barriers.forEach(function(k,ix){var d=Math.abs(p.x-X(k));if(d<tol&&d<bd){bd=d;bp=ix;}});
   return bp<0?null:{i:ai,p:bp};
 }
 function segAt(p){
   var ai=aireAt(p.y);
-  if(ai<0||p.x<-0.2||p.x>L+0.2)return null;
-  if(p.x>DBL_END+0.2)return {i:ai,j:state.airs[ai].lots.length-1};
-  var kF=(p.x-DBL_X0)/DBL_LEN*DBL_PL,ks=M.ksOf(state,ai);
+  if(ai<0)return null;
+  var kF=p.x*GI().plm,ks=M.ksOf(state,ai);
+  if(kF<ks[0]-0.6||kF>ks[ks.length-1]+0.6)return null;
   for(var j=0;j<ks.length-1;j++)if(kF>=ks[j]-1e-9&&kF<=ks[j+1]+1e-9)return {i:ai,j:j};
   return null;
 }

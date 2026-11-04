@@ -182,6 +182,53 @@ const onglet = (page, v) => page.click('nav [data-vue=' + v + ']');
   check('import du fichier : état d’avant retrouvé', await p.evaluate(b => JSON.stringify(state) === b, JSON.stringify(rt.before)));
   check('aucune erreur JS', p.errs.length === 0, p.errs); await p.ctx.close();
 
+  console.log('5. Plan de la bergerie paramétrable');
+  const s5 = v6(); M.figer(s5);
+  p = await ouvrir('bergerie_v6', s5);
+  await onglet(p, 'reglages');
+  check('résumé du plan : 35 × 22 m, 4 aires, 4 tapis, 654 places', (await txt(p)).includes('35 × 22 m · 4 aires · 4 tapis · 654 places à table'));
+  await p.click('[data-vue=geo]');
+  check('éditeur : plan cohérent au départ', (await txt(p)).includes('Plan cohérent'));
+  check('avertissement : trémies figées remises à régler', (await txt(p)).includes('remettra « à régler »'));
+  /* ajoute un tapis double et une aire (placés avant le couloir), puis remonte le tapis simple sous la nouvelle aire */
+  await p.click('[data-act=geoAdd][data-type=double]');
+  check('tapis ajouté avant le couloir', await p.evaluate(() => geoDraft.bandes[8].type === 'double' && geoDraft.bandes[9].type === 'couloir'));
+  check('incohérence signalée, enregistrement bloqué', (await txt(p)).includes('doit être entre deux aires') && await p.evaluate(() => document.querySelector('[data-act=geoOk]').disabled));
+  await p.click('[data-act=geoAdd][data-type=aire]');
+  await p.click('[data-act=geoDown][data-ix="7"]');   /* tapis simple descend sous le double 4 */
+  await p.click('[data-act=geoDown][data-ix="8"]');   /* … puis sous l'aire 5 */
+  check('ordre : aire 4, double 4, aire 5, tapis simple, couloir', await p.evaluate(() => geoDraft.bandes.slice(6).map(b => b.type).join() === 'aire,double,aire,simple,couloir'));
+  await p.fill('#g_8_len', '30');        /* aire 5 : 30 m */
+  await p.fill('#g_7_len', '80');        /* double 4 : 80 places */
+  await p.fill('#g_9_len', '90');        /* tapis simple : 90 places = 30 m */
+  check('plan cohérent après réglages', (await txt(p)).includes('Plan cohérent'));
+  await p.click('[data-act=geoOk]');
+  t = await txt(p);
+  check('enregistré : retour au plan, message', t.includes('Plan enregistré. Les trémies sont à régler de nouveau.') && await p.evaluate(() => vue === 'plan'));
+  check('5 aires, 5 tapis, trémies à régler', await p.evaluate(() => state.airs.length === 5 && Bergerie.nbTapis(state) === 5 && state.fige === null));
+  check('aire 4 garde ses lots et sa barrière', await p.evaluate(() => JSON.stringify(state.airs[3]) === JSON.stringify({ barriers: [65], lots: [1, 0] })));
+  /* places : Brebis = 3×92×2 − 92 (côté A du tapis 1 → aire 1)… recalcul par le modèle */
+  const P = await p.evaluate(() => [lotStats(0).P, lotStats(1).P]);
+  const ref = (() => { const x = JSON.parse(JSON.stringify(s5)); const g = M.geoDefaut();
+    g.bandes.splice(7, 0, { id: 'dX', type: 'double', nom: 'Tapis double 4', c0: 0, len: 80, h: 0.7 }, { id: 'aX', type: 'aire', nom: 'Aire 5', c0: 0, len: 90, h: 4 });
+    g.bandes[9].len = 90; M.setGeo(x, g); return [M.lotStats(x, 0).P, M.lotStats(x, 1).P]; })();
+  check('places calculées comme le modèle : ' + JSON.stringify(P), JSON.stringify(P) === JSON.stringify(ref), { P, ref });
+  check('plan dessiné : 5 aires', await p.evaluate(() => (document.querySelector('#map').innerHTML.match(/>Aire \d</g) || []).length === 5));
+  await onglet(p, 'tremies'); t = await txt(p);
+  check('trémies : 5 tapis listés dont « Tapis double 4 »', t.includes('Tapis double 4') && (t.match(/total [\d,]+ kg/g) || []).length === 5);
+  await onglet(p, 'controle');
+  check('contrôle : kg ÷ têtes cohérent', /kg sur ses \d+ places ÷ 200 têtes/.test(await txt(p)));
+  await p.reload(); await p.waitForTimeout(200);
+  check('plan mémorisé après rechargement', await p.evaluate(() => state.airs.length === 5 && Bergerie.G(state).tapis[3].len === 80));
+  await onglet(p, 'reglages'); await p.click('[data-vue=geo]');
+  await p.click('[data-act=geoDel][data-ix="0"]'); await p.click('[data-act=geoDel][data-ix="0"]');
+  await p.click('[data-act=geoX]');
+  check('annuler : rien de changé', await p.evaluate(() => state.airs.length === 5));
+  await p.click('[data-vue=geo]'); await p.click('[data-act=geoDef]'); await p.click('[data-act=geoDef]'); await p.click('[data-act=geoOk]');
+  check('retour au plan par défaut : 4 aires, 654 places', await p.evaluate(() => state.airs.length === 4 && lotStats(0).P + lotStats(1).P === 654));
+  check('une copie gardée avant chaque changement de plan', await p.evaluate(() => Stockage.vider().then(Stockage.copies).then(cs => cs.filter(c => /changement plan/.test(c.libelle)).length >= 2)));
+  check('aucune erreur JS', p.errs.length === 0, p.errs); await p.ctx.close();
+
   await browser.close(); srv.close();
   console.log('\n' + passes + ' ok, ' + fails + ' échec(s)');
   process.exit(fails ? 1 : 0);
