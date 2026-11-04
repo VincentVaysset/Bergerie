@@ -15,11 +15,11 @@ Un **outil du quotidien à la bergerie**, pas un gadget :
 
 ## 1. Le projet en bref
 
-Appli de Vincent Vaysset, **éleveur ovin laitier bio** : plan numérique de sa bergerie (35 m × 22 m) pour gérer ses **lots de brebis, barrières, rations et réglages de trémies** (distributeurs de concentré le long des auges). Aujourd'hui : single-page app HTML/CSS/JS vanilla, **zéro dépendance**, un seul fichier, publiée sur GitHub Pages : https://vincentvaysset.github.io/bergerie/ — dépôt `VincentVaysset/bergerie`, branche `main`, à la racine (anciennement `Conges/bergerie/`). Objectif : en faire une vraie app.
+Appli de Vincent Vaysset, **éleveur ovin laitier bio** : plan numérique de sa bergerie (35 m × 22 m) pour gérer ses **lots de brebis, barrières, rations et réglages de trémies** (distributeurs de concentré le long des auges). Aujourd'hui : single-page app HTML/CSS/JS vanilla, **zéro dépendance**, un seul fichier, publiée sur GitHub Pages : https://vincentvaysset.github.io/Bergerie/ — dépôt `VincentVaysset/Bergerie`, branche `main`, à la racine (anciennement `Conges/bergerie/`). Objectif : en faire une vraie app.
 
 **Règles absolues :**
 - Vincent parle français, veut des réponses et une UI **concises et sobres** : aucun emoji dans l'interface (icônes SVG fines uniquement), libellés sérieux, « pas la patte IA ».
-- **Ne JAMAIS toucher aux dépôts `Ovilog` et `Logisol`** (autres applis de Vincent). Tout ce projet vit dans le dépôt `VincentVaysset/bergerie`.
+- **Ne JAMAIS toucher aux dépôts `Ovilog` et `Logisol`** (autres applis de Vincent). Tout ce projet vit dans le dépôt `VincentVaysset/Bergerie`.
 - Données 100 % locales (aucun serveur, aucune donnée envoyée). Offline-first obligatoire : la bergerie n'a pas toujours de réseau.
 
 ## 2. Ce que fait l'appli aujourd'hui (v8, 03/11/2026)
@@ -136,7 +136,7 @@ Ces scénarios ont été exécutés en harness DOM simulé sur la version actuel
 
 ## 9. Migration vers le dépôt dédié — faite le 04/11/2026
 
-Le projet a quitté `Conges/bergerie/` pour ce dépôt (contenu à la racine), publié sur https://vincentvaysset.github.io/bergerie/. localStorage est lié au domaine `vincentvaysset.github.io` : les données (clé `bergerie_lots_v5`) ont suivi sans transfert. Le dossier `bergerie/` de Conges ne sera supprimé qu'après confirmation de Vincent (raccourci téléphone réinstallé depuis la nouvelle adresse).
+Le projet a quitté `Conges/bergerie/` pour ce dépôt (contenu à la racine), publié sur https://vincentvaysset.github.io/Bergerie/. localStorage est lié au domaine `vincentvaysset.github.io` : les données (clé `bergerie_lots_v5`) ont suivi sans transfert. Vincent a confirmé le 04/11/2026 (raccourci réinstallé) : `Conges/bergerie/` ne contient plus qu'une page de redirection vers ici et un service worker qui se désinstalle. Attention : l'adresse respecte la majuscule (`/Bergerie/`).
 
 ## 8. Histoire des versions (ce qui a été essayé et rejeté)
 

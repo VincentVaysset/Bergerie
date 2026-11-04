@@ -2,7 +2,7 @@
 
 Plan interactif de la bergerie (35 m × 22 m) : aires, tapis, barrières, lots et rations, et réglage des trémies place par place. Aucune donnée envoyée : tout reste sur l’appareil.
 
-**Ouvrir : <https://vincentvaysset.github.io/bergerie/>**
+**Ouvrir : <https://vincentvaysset.github.io/Bergerie/>**
 
 ## Le dessin
 - Les 4 aires font toute la longueur ; les 3 tapis doubles (92 places/côté) et le tapis simple (102 places) sont alignés à gauche, avec règle graduée.
