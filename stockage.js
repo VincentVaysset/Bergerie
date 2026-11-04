@@ -1,5 +1,5 @@
 /* Ma bergerie — stockage local sans perte.
-   1. localStorage (clé bergerie_lots_v5, inchangée) : source principale, lecture synchrone au démarrage,
+   1. localStorage (clé bergerie_v6 ; les anciennes clés v5/v3 sont relues une fois puis laissées intactes) : source principale, lecture synchrone au démarrage,
       chaque écriture est relue pour vérification.
    2. IndexedDB (base « bergerie ») : miroir de l'état courant + une copie par jour (7 derniers jours)
       + une copie avant chaque remise à zéro / import. Sert de secours si localStorage est vidé ou abîmé.
@@ -42,11 +42,19 @@
 
   /* ---- lecture au démarrage (synchrone) ---- */
   function charger() {
-    try { var s = JSON.parse(root.localStorage.getItem(M.KEY)); if (M.isState(s)) return { state: s, source: 'v5' }; } catch (e) {}
-    try {
-      var o = JSON.parse(root.localStorage.getItem(M.KEYOLD));
-      if (M.isState(o)) return { state: M.migrateV3(o), source: 'v3' };
-    } catch (e) {}
+    var brut = null;
+    try { brut = root.localStorage.getItem(M.KEY); } catch (e) {}
+    if (brut != null) {
+      try { var s = JSON.parse(brut); if (M.isState(s)) return { state: M.normalize(s), source: 'v6' }; } catch (e) {}
+      /* sauvegarde v6 abîmée : ne PAS reprendre l'ancienne version (plus vieille) — d'abord le secours IndexedDB */
+      return { state: null, source: null, abime: true };
+    }
+    return chargerAncien();
+  }
+  /* anciennes versions : reprises, et laissées intactes dans leur clé (filet de sécurité) */
+  function chargerAncien() {
+    try { var o = M.versV6(JSON.parse(root.localStorage.getItem(M.KEY5))); if (o) return { state: o, source: 'v5' }; } catch (e) {}
+    try { var o3 = M.versV6(JSON.parse(root.localStorage.getItem(M.KEYOLD))); if (o3) return { state: o3, source: 'v3' }; } catch (e) {}
     return { state: null, source: null };
   }
 
@@ -97,7 +105,7 @@
     return idbGet('courant').then(function (txt) {
       if (!txt) return null;
       var s = JSON.parse(txt);
-      return M.isState(s) ? M.normalize(s) : null;
+      return M.versV6(s);
     }).catch(function () { return null; });
   }
 
@@ -115,12 +123,12 @@
         var dt = a ? new Date(a[1]) : null;
         var lib = m ? 'Fin de journée du ' + m[1].split('-').reverse().join('/')
           : (a ? 'Avant ' + a[2].replace(/-/g, ' ') + ' (' + jour(dt).split('-').reverse().join('/') + ' ' + ('0' + dt.getHours()).slice(-2) + 'h' + ('0' + dt.getMinutes()).slice(-2) + ')' : x.cle);
-        return { cle: x.cle, libelle: lib, tri: tri, lots: s && s.lots ? s.lots.length : 0, ok: M.isState(s) };
+        return { cle: x.cle, libelle: lib, tri: tri, lots: s && s.lots ? s.lots.length : 0, ok: M.formeOk(s) };
       }).filter(function (c) { return c.ok; }).sort(function (a, b) { return a.tri < b.tri ? 1 : -1; });
     }).catch(function () { return []; });
   }
   function lireCopie(cle) {
-    return idbGet(cle).then(function (txt) { var s = JSON.parse(txt); return M.isState(s) ? M.normalize(s) : null; }).catch(function () { return null; });
+    return idbGet(cle).then(function (txt) { return M.versV6(JSON.parse(txt)); }).catch(function () { return null; });
   }
 
   function persister() {
@@ -135,7 +143,7 @@
   }
 
   root.Stockage = {
-    charger: charger, enregistrer: enregistrer, vider: vider, copieAvant: copieAvant,
+    charger: charger, chargerAncien: chargerAncien, enregistrer: enregistrer, vider: vider, copieAvant: copieAvant,
     secours: secours, copies: copies, lireCopie: lireCopie, persister: persister,
     estKo: function () { return ko; }
   };

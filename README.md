@@ -4,19 +4,18 @@ Plan interactif de la bergerie (35 m × 22 m) : aires, tapis, barrières, lots e
 
 **Ouvrir : <https://vincentvaysset.github.io/Bergerie/>**
 
-## Le dessin
-- Les 4 aires font toute la longueur ; les 3 tapis doubles (92 places/côté) et le tapis simple (102 places) sont alignés à gauche, avec règle graduée.
-- Touche un morceau d’aire pour l’attribuer à un lot · appui long = nouvelle barrière · glisse une barrière pour la déplacer.
-- Panneau repliable (« Détails / Masquer ») pour agrandir le plan ; sur grand écran, le panneau passe sur le côté.
+## Deux sens de travail
+- **Rations → trémies** : tu donnes la ration voulue par lot (g/brebis/j ou kg du lot), l’appli donne la dose à régler par place, tapis par tapis.
+- **Trémies figées → ration** : une fois réglées, tu figes. Tu bouges ensuite barrières et effectifs au fil des mises bas : les doses restent, l’appli recalcule ce que reçoit chaque brebis et le compare à la ration voulue (vert / orange / rouge).
 
-## Lots & aliments
-- Effectif, nom, rations g/brebis ↔ kg du lot liés ; barres et totaux par aliment ; « Appliquer ces rations à tous les lots ».
-- Aliments nommables, une couleur par aliment.
+## Les onglets
+- **Plan** : la bergerie, les barrières, les effectifs (+ / −), ce que reçoit chaque lot.
+- **Rations** : la ration voulue par lot et par aliment.
+- **Trémies** : les doses à régler, figer, recalculer, même dose partout, corriger une dose.
+- **Contrôle** : reçu / voulu par lot, écart, et « kg ÷ têtes = g/j ».
+- **Réglages** : aliments, seuils du repère, sauvegarde, copies, remise à zéro.
 
-## Onglet Trémies
-- Pour chaque tapis et chaque plage de places : la dose à régler par aliment, plus le total à verser.
-- La trémie verse au milieu du tapis : une seule ration pour les 2 rangées. « 2 × » la dose par rangée — impossible à séparer quand 2 lots se partagent le tapis.
-- Contrôle par lot : total versé au lot sur toutes ses places ÷ son effectif = sa ration g/j.
+La trémie verse au milieu du tapis double : une seule dose pour les 2 rangées, chaque rangée en reçoit la moitié.
 
 ## Données
 - Enregistrement automatique sur l’appareil, avec contrôle : avertissement si le navigateur refuse d’enregistrer.

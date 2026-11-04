@@ -3,147 +3,175 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#3c7a4e">
+<meta name="theme-color" content="#2f6b43">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Bergerie">
 <link rel="manifest" href="manifest.webmanifest">
-<title>Ma bergerie — Lots & rations</title>
+<link rel="icon" href="icon.svg">
+<title>Ma bergerie — Lots &amp; rations</title>
 <style>
-  :root{--vert:#3c7a4e;--vertf:#eaf2ec;--creme:#fbf8f1;--orange:#e3812f;--danger:#d1584f;--encre:#26221e;--muet:#8a8175;--ligne:#e6dfd0;}
+  :root{
+    --vert:#2f6b43;--vertf:#e6f0e8;--fond:#f7f4ec;--carte:#ffffff;--encre:#211e1a;--muet:#7b7368;--ligne:#e4ddcd;--doux:#f3eee3;
+    --ok:#2f7d4a;--okf:#e3f1e7;--att:#c77a12;--attf:#fbefd9;--hors:#c0392f;--horsf:#f9e3e0;--vide:#9a9187;--videf:#efebe4;
+    --nav:64px;
+  }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0;height:100%}
-  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--creme);color:var(--encre);display:flex;flex-direction:column;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
-  header{background:var(--vert);color:#fff;flex-shrink:0}
-  .hrow{display:flex;align-items:center;gap:10px;padding:8px 14px}
-  .brand{line-height:1.18;flex:1;min-width:0}
-  .brand b{font-size:16px;font-weight:700;letter-spacing:.2px;display:block;white-space:nowrap}
-  .brand span{font-size:10.5px;opacity:.75;letter-spacing:.8px;text-transform:uppercase;display:block}
-  button{font:inherit;border:none;border-radius:10px;cursor:pointer;background:none;padding:8px 12px;color:inherit}
-  .btnw{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28);width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0}
-  .btnw:active{background:rgba(255,255,255,.3)}
-  .btnw.warn{background:var(--danger);border-color:var(--danger)}
-  #main{flex:1;display:flex;flex-direction:column;min-height:0}
-  #mapWrap{flex:1;position:relative;min-height:0;background:#efe9dc}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--fond);color:var(--encre);display:flex;flex-direction:column;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent;font-size:16px}
+  button{font:inherit;border:none;border-radius:12px;cursor:pointer;background:none;color:inherit;padding:0}
+  input{font:inherit;color:var(--encre)}
+  svg.i{flex-shrink:0}
+  .num{font-variant-numeric:tabular-nums}
+
+  /* en-tête */
+  header{background:var(--vert);color:#fff;flex-shrink:0;padding:calc(env(safe-area-inset-top) + 10px) 16px 10px;display:flex;align-items:center;gap:12px}
+  header h1{margin:0;font-size:19px;font-weight:700;flex:1;letter-spacing:.2px}
+  .pill{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:7px 13px;font-size:14px;font-weight:600;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);color:#fff}
+  .pill.regler{background:#fff;color:var(--att);border-color:#fff}
+
+  /* vues */
+  main{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+  .vue{display:none;padding:14px 16px 28px;max-width:760px;margin:0 auto}
+  .vue.on{display:block}
+  #v-plan{padding:0;max-width:none}
+  h2{font-size:13px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;color:var(--muet);margin:22px 0 8px}
+  h2:first-child{margin-top:4px}
+
+  /* barre d'onglets */
+  nav{flex-shrink:0;display:flex;background:var(--carte);border-top:1px solid var(--ligne);padding-bottom:env(safe-area-inset-bottom)}
+  nav button{flex:1;height:var(--nav);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muet);font-size:12px;font-weight:600;border-radius:0;position:relative}
+  nav button.on{color:var(--vert)}
+  nav button.on::before{content:"";position:absolute;top:0;left:22%;right:22%;height:3px;border-radius:0 0 3px 3px;background:var(--vert)}
+  nav .alerte{position:absolute;top:9px;left:calc(50% + 8px);width:10px;height:10px;border-radius:50%;border:2px solid var(--carte)}
+
+  /* cartes */
+  .carte{background:var(--carte);border:1px solid var(--ligne);border-radius:16px;padding:14px 16px;margin:10px 0}
+  .ligne{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sp{flex:1}
+  .muet{color:var(--muet)}
+  .petit{font-size:13.5px}
+  .gros{font-size:30px;font-weight:800;line-height:1.05}
+  .moyen{font-size:20px;font-weight:700}
+  .dot{width:14px;height:14px;border-radius:5px;display:inline-block;flex-shrink:0}
+  .nom{font-weight:700;font-size:17px}
+  .sep{border-top:1px solid var(--ligne);margin:12px 0}
+  .hint{font-size:13.5px;color:var(--muet);line-height:1.5;margin:10px 2px}
+
+  /* boutons */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border-radius:12px;font-weight:600;background:var(--doux);color:var(--encre)}
+  .btn.prim{background:var(--vert);color:#fff}
+  .btn.danger{background:var(--horsf);color:var(--hors)}
+  .btn.plein{width:100%}
+  .btn.mini{min-height:38px;padding:0 12px;font-size:14px}
+  .ico{width:42px;height:42px;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;background:var(--doux);color:#4a443d}
+  .ico.danger{background:var(--horsf);color:var(--hors)}
+  .seg{display:inline-flex;background:var(--doux);border-radius:12px;padding:3px}
+  .seg button{min-height:38px;padding:0 14px;border-radius:10px;font-weight:600;color:var(--muet);font-size:14.5px}
+  .seg button.on{background:var(--carte);color:var(--encre);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+
+  /* saisies */
+  .champ{width:92px;height:46px;border:1.5px solid var(--ligne);border-radius:12px;text-align:center;font-size:20px;font-weight:700;background:#fff}
+  .champ:focus{outline:none;border-color:var(--vert)}
+  .champ.txt{width:auto;flex:1;min-width:140px;text-align:left;padding:0 12px;font-size:17px;font-weight:600}
+  .pas{display:inline-flex;align-items:center;gap:6px}
+  .pas button{width:46px;height:46px;border-radius:12px;background:var(--doux);font-size:24px;font-weight:600;display:flex;align-items:center;justify-content:center}
+
+  /* repères */
+  .badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:5px 11px;font-size:14px;font-weight:700;white-space:nowrap}
+  .n-ok{background:var(--okf);color:var(--ok)}
+  .n-attention{background:var(--attf);color:var(--att)}
+  .n-hors{background:var(--horsf);color:var(--hors)}
+  .n-vide{background:var(--videf);color:var(--vide)}
+  .barre{border-left:6px solid var(--vide)}
+  .barre.n-ok-b{border-left-color:var(--ok)} .barre.n-attention-b{border-left-color:var(--att)} .barre.n-hors-b{border-left-color:var(--hors)}
+  .tag{display:inline-block;border:1px solid var(--ligne);border-radius:8px;padding:2px 8px;font-size:13px;color:#5f584f;background:#faf8f3}
+
+  /* bannières */
+  .banniere{border-radius:16px;padding:14px 16px;margin:4px 0 10px;display:flex;gap:12px;align-items:flex-start}
+  .banniere b{display:block;font-size:18px;margin-bottom:2px}
+  .note{background:var(--doux);border-radius:12px;padding:10px 12px;font-size:14px;margin:8px 0;display:flex;gap:9px;align-items:flex-start;color:#4a443d;line-height:1.45}
+  .note.ko{background:var(--horsf);color:#8f2a22}
+
+  /* trémies */
+  .plage{padding:10px 0;border-top:1px solid var(--doux)}
+  .plage:first-of-type{border-top:none}
+  .dose{display:flex;align-items:center;gap:10px;padding:7px 0}
+  .dose .fn{flex:1;display:flex;align-items:center;gap:8px;font-size:15.5px}
+  .dose .val{font-size:24px;font-weight:800;text-align:right;min-width:96px}
+  .dose .val small{font-size:13px;font-weight:600;color:var(--muet);margin-left:2px}
+  .dose button.val{border-bottom:2px dashed var(--ligne);border-radius:0;padding:0 0 1px}
+  .ecart{font-size:13px;color:var(--att);font-weight:600}
+
+  /* plan */
+  #planWrap{display:flex;flex-direction:column}
+  #mapWrap{position:relative;width:100%;aspect-ratio:35.8/23.2;max-height:62dvh;background:#ebe4d3;flex-shrink:0}
   #map{width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-  .zooms{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
-  .zooms button{width:38px;height:38px;background:#fff;border:1px solid var(--ligne);color:var(--encre);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 4px rgba(38,34,30,.12)}
-  #side{flex-shrink:0;display:flex;flex-direction:column;background:#fff;border-top:1px solid var(--ligne)}
-  #tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 10px 2px;background:#fff;-webkit-overflow-scrolling:touch;scrollbar-width:none}
-  #tabs::-webkit-scrollbar{display:none}
-  .tab{display:flex;align-items:center;gap:6px;border-radius:999px;padding:7px 13px;border:1.5px solid var(--ligne);background:#faf7f0;color:#4a443d;font-weight:600;font-size:13.5px;white-space:nowrap;flex-shrink:0}
-  .tab.on{border-color:var(--vert);background:var(--vertf);color:var(--vert)}
-  .tab svg{flex-shrink:0}
-  .tab .dot{width:11px;height:11px;border-radius:4px;flex-shrink:0}
-  .cbar{display:flex;justify-content:center;flex-shrink:0;padding:2px 0 3px}
-  .cbar button{display:flex;align-items:center;gap:6px;color:var(--muet);font-size:12px;font-weight:600;letter-spacing:.4px;padding:5px 14px;border-radius:999px}
-  .cbar button:active{background:#f3eee3}
-  #panel{padding:2px 14px 16px;max-height:42dvh;overflow:auto;flex-shrink:0}
-  #side.min #panel{display:none}
-  .ph{font-weight:700;color:var(--vert);display:flex;align-items:center;gap:8px;margin:6px 0 4px;flex-wrap:wrap;font-size:15px}
-  .dot{width:13px;height:13px;border-radius:4px;display:inline-block;flex-shrink:0}
-  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
-  .lbl{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muet);min-width:82px}
-  .vv{font-size:14px;color:#4a4440;line-height:1.4}
-  .big{font-size:16px;font-weight:700}
-  button.step{width:42px;height:42px;background:#faf7f0;border:1px solid var(--ligne);color:var(--encre);font-size:20px;padding:0}
-  button.act{background:var(--vert);color:#fff}
-  button.warn{background:var(--danger);color:#fff}
-  .closep{margin-left:auto;background:#f3eee3;color:#5a5248;padding:6px 9px;border-radius:9px;display:flex;align-items:center}
-  .btnsm{background:#f3eee3;color:#4a443d;padding:5px 10px;border-radius:9px;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
-  .btnsm.danger{background:#fdeceb;color:#a33b32}
-  input{font:inherit;border:1px solid var(--ligne);border-radius:10px;padding:9px 8px;background:#fff;color:var(--encre);font-size:16px;text-align:center}
-  input.short{width:76px}
-  .hint{font-size:12.5px;color:var(--muet);margin-top:8px;line-height:1.45}
-  .sep{border-top:1px solid var(--ligne);margin:10px 0}
-  .chip{border-radius:999px;padding:7px 13px;border:2px solid transparent;font-weight:600;background:#f3eee3;color:var(--encre);font-size:13.5px}
+  .zooms{position:absolute;right:6px;top:6px;display:flex;flex-direction:column;gap:5px}
+  .zooms button{width:36px;height:36px;opacity:.92;background:#fff;border:1px solid var(--ligne);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+  #planBas{padding:6px 16px 28px;max-width:760px;width:100%;margin:0 auto}
+  .lotc{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .lotc .info{flex:1;min-width:150px}
+  .chip{border-radius:999px;padding:9px 15px;border:2px solid transparent;font-weight:600;background:var(--doux);font-size:15px}
   .chip.on{border-color:var(--encre)}
-  .fcard{border-radius:12px;padding:8px 12px;margin:8px 0;background:#fff;border:1px solid var(--ligne)}
-  .fc-top{display:flex;align-items:center;gap:7px}
-  .fc-name{font-weight:600;flex:1}
-  .fc-bar{height:8px;border-radius:4px;background:#f0ebdd;margin:6px 0 4px;overflow:hidden}
-  .fc-fill{height:100%;border-radius:4px}
-  .fc-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
-  .tot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;font-size:15px}
-  .tot b{font-size:18px}
-  .mini{font-size:12px;border-radius:8px;padding:2px 7px;margin:1px;display:inline-flex;align-items:center;gap:5px}
-  .mini .dot{width:9px;height:9px}
-  .lotsList .lrow{display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid var(--ligne);cursor:pointer;flex-wrap:wrap}
-  .lotsList .lrow:active{background:#faf7f0}
-  .lrow .nm{font-weight:700}
-  .su{font-size:12px;color:#7a7267;border:1px solid var(--ligne);border-radius:7px;padding:2px 7px;margin:1px;display:inline-block;background:#faf7f0}
-  .trow{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f3eee3;flex-wrap:wrap}
-  .notice{background:#f3eee3;border:1px solid var(--ligne);border-radius:10px;padding:7px 11px;font-size:13px;margin:6px 0;display:flex;gap:8px;align-items:flex-start;color:#4a443d}
-  .notice svg{flex-shrink:0;margin-top:1px}
-  .notice.ko{background:#fdeceb;color:#a33b32;border-color:#f2cdc9}
-  @media(min-width:920px){
-    #main{flex-direction:row}
-    #side{width:430px;border-top:none;border-left:1px solid var(--ligne)}
-    #panel{max-height:none;flex:1;min-height:0}
+
+  @media(min-width:980px){
+    #v-plan.on{display:flex;height:100%}
+    #planWrap{flex-direction:row;height:100%;width:100%}
+    #mapWrap{aspect-ratio:auto;max-height:none;height:100%;flex:1}
+    #planBas{width:430px;flex-shrink:0;overflow:auto;border-left:1px solid var(--ligne);background:var(--fond)}
   }
 </style>
 </head>
 <body>
 <header>
-  <div class="hrow">
-    <div class="brand"><b>Ma bergerie</b><span>Lots &amp; rations</span></div>
-    <button class="btnw" id="btnReset" title="Tout remettre à zéro"></button>
-  </div>
+  <h1>Ma bergerie</h1>
+  <button class="pill" id="pill"></button>
 </header>
-<main id="main">
-  <div id="mapWrap">
-    <svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
-    <div class="zooms">
-      <button id="zin" title="Zoomer"></button>
-      <button id="zout" title="Dézoomer"></button>
-      <button id="zfit" title="Vue complète"></button>
+<main>
+  <section class="vue" id="v-plan">
+    <div id="planWrap">
+      <div id="mapWrap">
+        <svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet" aria-label="Plan de la bergerie"></svg>
+        <div class="zooms">
+          <button id="zin" aria-label="Zoomer"></button>
+          <button id="zout" aria-label="Dézoomer"></button>
+          <button id="zfit" aria-label="Vue complète"></button>
+        </div>
+      </div>
+      <div id="planBas"></div>
     </div>
-  </div>
-  <div id="side">
-    <nav id="tabs"></nav>
-    <div class="cbar"><button id="pcol" title="Afficher ou masquer les détails"></button></div>
-    <section id="panel"></section>
-  </div>
+  </section>
+  <section class="vue" id="v-rations"></section>
+  <section class="vue" id="v-tremies"></section>
+  <section class="vue" id="v-controle"></section>
+  <section class="vue" id="v-reglages"></section>
 </main>
-<script src="modele.js?v=9"></script>
-<script src="stockage.js?v=9"></script>
+<nav id="nav"></nav>
+
+<script src="modele.js?v=10"></script>
+<script src="stockage.js?v=10"></script>
 <script>
 'use strict';
 var M=window.Bergerie,S=window.Stockage;
-/* ============ BERGERIE — valeurs ajustables ============
-   35 m × 22 m — 3 places au mètre
-   Aires : toute la longueur (35 m). Seuls les tapis sont plus courts :
-   Tapis doubles : 92 places/côté (~30,67 m) — Tapis simple : 102 places (34 m)
-   Bandes : Aire 1 / Tapis 1 / Aire 2 / Tapis 2 / Aire 3 / Tapis 3 / Aire 4 / Tapis simple / couloir */
-var L=35, W=22, PL_M=M.PL_M, DBL_PL=M.DBL_PL, TS_PL=M.TS_PL;   /* géométrie : modele.js */
-var DBL_X0=M.DBL_X0, DBL_LEN=M.DBL_LEN, DBL_END=DBL_X0+DBL_LEN;   /* doubles : 0 → 30,67 m */
-var TS_X0=0, TS_LEN=M.TS_LEN, TS_END=TS_X0+TS_LEN;         /* simple : 0 → 34 m */
-var AIRES=[
-  {y:0.0,  h:4.3,lab:'Aire 1'},
-  {y:5.0,  h:4.3,lab:'Aire 2'},
-  {y:10.0, h:4.3,lab:'Aire 3'},
-  {y:15.0, h:4.3,lab:'Aire 4'}
-];
-var TAPIS=[
-  {y:4.3,  h:0.7,x1:DBL_END,lab:'Tapis double 1'},
-  {y:9.3,  h:0.7,x1:DBL_END,lab:'Tapis double 2'},
-  {y:14.3, h:0.7,x1:DBL_END,lab:'Tapis double 3'},
-  {y:19.3, h:0.7,x1:TS_END, lab:'Tapis simple'}
-];
+var L=35,W=22,DBL_PL=M.DBL_PL,TS_PL=M.TS_PL,DBL_X0=M.DBL_X0,DBL_LEN=M.DBL_LEN,DBL_END=DBL_X0+DBL_LEN,TS_END=M.TS_LEN;
+var AIRES=[{y:0.0,h:4.3,lab:'Aire 1'},{y:5.0,h:4.3,lab:'Aire 2'},{y:10.0,h:4.3,lab:'Aire 3'},{y:15.0,h:4.3,lab:'Aire 4'}];
+var TAPIS=[{y:4.3,h:0.7,x1:DBL_END,lab:'Tapis double 1'},{y:9.3,h:0.7,x1:DBL_END,lab:'Tapis double 2'},{y:14.3,h:0.7,x1:DBL_END,lab:'Tapis double 3'},{y:19.3,h:0.7,x1:TS_END,lab:'Tapis simple'}];
+var NOMS_TAPIS=['Tapis double 1','Tapis double 2','Tapis double 3','Tapis simple'];
 var LOT_COLS=['#a8d5b0','#f5cfa0','#a9cbe8','#f2b8cf','#e8e0a0','#c9b8e8','#9fd9c8','#f0b9a0'];
 var FEED_COLS=['#6a994e','#d9a441','#7b6cbf','#4d8fd1','#c96a5b','#3ba99c','#b5853f','#8a8f5a'];
+var NIV={ok:'correct',attention:'à surveiller',hors:'hors norme',vide:'—'};
 
-/* ============ icônes ============ */
+/* ============ icônes (traits fins) ============ */
 var ICONS={
-  plan:'<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9.5h18M9.5 3v18"/>',
-  plus:'<path d="M12 5v14M5 12h14"/>',
+  plan:'<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9.5h18M3 15h18M12 15v6"/>',
+  ration:'<path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M8 7c0-1.5 1-2 1-3.5M12 7c0-1.5 1-2 1-3.5M16 7c0-1.5 1-2 1-3.5"/>',
   hopper:'<path d="M4.5 4.5h15l-5.5 7v4.5l-4 3v-7.5z"/>',
-  chevU:'<path d="M6 14l6-6 6 6"/>',
-  chevD:'<path d="M6 10l6 6 6-6"/>',
-  reset:'<path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.5v5h5"/>',
-  zin:'<circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.4-4.4M11 8v6M8 11h6"/>',
-  zout:'<circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.4-4.4M8 11h6"/>',
-  fit:'<path d="M8.5 3.5h-5v5M15.5 3.5h5v5M8.5 20.5h-5v-5M15.5 20.5h5v-5"/>',
+  ctrl:'<path d="M12 3l7.5 3v5.5c0 4.5-3.2 8-7.5 9.5-4.3-1.5-7.5-5-7.5-9.5V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+  gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1"/>',
+  lock:'<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  unlock:'<rect x="5" y="10.5" width="14" height="10" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 7.7-1.5"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
   pen:'<path d="M13.5 20.5h7"/><path d="M16.4 3.9a2 2 0 0 1 2.8 2.8L7.5 18.4l-3.9 1 1-3.9z"/>',
   trash:'<path d="M3.5 6.5h17M8.5 6.5v-2h7v2M18.5 6.5l-1 14h-11l-1-14M10 11v5.5M14 11v5.5"/>',
   warn:'<path d="M12 3.5L2.5 19.5a1.5 1.5 0 0 0 1.3 2.3h16.4a1.5 1.5 0 0 0 1.3-2.3L12 3.5z"/><path d="M12 10v4M12 17.5h.01"/>',
@@ -151,612 +179,501 @@ var ICONS={
   check:'<path d="M20 6.5L9.5 17.5 4 12"/>',
   close:'<path d="M17.5 6.5l-11 11M6.5 6.5l11 11"/>',
   dl:'<path d="M12 3.5v11M7.5 10.5L12 15l4.5-4.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
-  ul:'<path d="M12 15.5v-11M7.5 8.5L12 4l4.5 4.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'
+  ul:'<path d="M12 15.5v-11M7.5 8.5L12 4l4.5 4.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  reset:'<path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.5v5h5"/>',
+  zin:'<circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.4-4.4M11 8v6M8 11h6"/>',
+  zout:'<circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.4-4.4M8 11h6"/>',
+  fit:'<path d="M8.5 3.5h-5v5M15.5 3.5h5v5M8.5 20.5h-5v-5M15.5 20.5h5v-5"/>',
+  copy:'<rect x="8" y="8" width="12.5" height="12.5" rx="2"/><path d="M16 8V5.5a2 2 0 0 0-2-2H5.5a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2H8"/>',
+  left:'<path d="M14.5 6l-6 6 6 6"/>', right:'<path d="M9.5 6l6 6-6 6"/>'
 };
-function ic(n,s){return '<svg viewBox="0 0 24 24" width="'+(s||13)+'" height="'+(s||13)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';}
+function ic(n,s){s=s||18;return '<svg class="i" viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';}
 
 /* ============ état ============ */
-/* calculs : modele.js (testé) — stockage : stockage.js (localStorage + miroir IndexedDB) */
-var KEY=M.KEY;
-var storageKo=false,fromBackup=false;
-function save(){storageKo=!S.enregistrer(state);}
+var storageKo=false,notice='',noticeKo=false;
 var boot=S.charger();
 var state=boot.state||M.defaultState();
 M.normalize(state);
-if(boot.source==='v3')save();
-var sel=null,showTrie=false,editName=null,editFeed=null,arm=null,notice='',panelMin=false;
-var anchorTk={}; /* dernier kg à verser connu par lot (effectif>0) */
-
-/* ============ géométrie / calculs (délégués au modèle) ============ */
-function xOfK(k){return M.xOfK(k);}
-function cumT(k){return M.cumT(k);}
-function ksOf(i){return M.ksOf(state,i);}
-function segsOf(i){return M.segsOf(state,i);}
-function lotById(id){return M.lotById(state,id);}
-function lotCol(id){return LOT_COLS[id%LOT_COLS.length];}
-function colFeed(id){return FEED_COLS[id%FEED_COLS.length];}
-function lotName(l){return l?(l.name?l.name:'Lot '+(l.id+1)):'—';}
-function lotShort(l){return l?(l.name?l.name.slice(0,14):'L'+(l.id+1)):'—';}
-function lotStats(id){return M.lotStats(state,id);}
-function ppVal(l,fid){return M.ppVal(l,fid);}
-function feedVal(l,fid){return M.feedVal(state,l,fid);}
-function setFeedVal(l,fid,v){M.setFeedVal(l,fid,v);}
-function setPP(l,fid,v){M.setPP(l,fid,v);}
-function setB(l,nb){return M.setB(state,l,nb,anchorTk);}
-function sumRations(l){return M.sumRations(state,l);}
-function lotTot(l,fid){return M.lotTot(state,l,fid);}
-function perPlace(l,fid){return M.perPlace(state,l,fid);}
-function lotAt(i,k){return M.lotAt(state,i,k);}
-function dblRanges(t){return M.dblRanges(state,t);}
-function tsRanges(){return M.tsRanges(state);}
-function trieHtml(){
-  var head='<div class="ph">Trémies — réglage par place<button class="closep" id="pCloseTrie">'+ic('close',12)+'</button></div>';
-  if(!state.feeds.length)return head+'<div class="vv">Aucun aliment : ajoute-en depuis l’onglet Bergerie.</div>';
-  var names=['Tapis double 1','Tapis double 2','Tapis double 3','Tapis simple'];
-  var cards='',grand=0;
-  for(var t=0;t<4;t++){
-    var rs=(t<3?dblRanges(t):tsRanges()).filter(function(r){return r.tot>0;});
-    var tot=0;rs.forEach(function(r){tot+=(r.k2-r.k1)*r.tot;});
-    grand+=tot;
-    var lines='';
-    rs.forEach(function(r){
-      var same=r.b!=null&&r.b===r.a;
-      var who=lotShort(lotById(r.a))+((r.b==null)?'':(same?' des 2 côtés':' + '+lotShort(lotById(r.b))+' · ration commune'));
-      var dots='<span class="dot" style="background:'+lotCol(r.a)+'"></span>'+((r.b==null)?'':'<span class="dot" style="background:'+lotCol(r.b)+'"></span>');
-      var fed=state.feeds.filter(function(f){return (r.doses[f.id]||0)>0.0005;});
-      function feedLine(f,compact){
-        var pa=Math.round(perPlace(lotById(r.a),f.id)*1000);
-        var nm='<span class="dot" style="background:'+colFeed(f.id)+'"></span>'+esc(f.name);
-        var split='';
-        if(same){split='<span class="su">2 × '+pa+' g</span>';}
-        else if(r.b!=null){
-          var pb=Math.round(perPlace(lotById(r.b),f.id)*1000);
-          split='<span class="su">2 × '+Math.round((pa+pb)/2)+' g</span>';
-        }
-        if(compact)return '<div class="trow">'+dots+'<span class="vv" style="flex:1">places <b>'+(r.k1+1)+'–'+r.k2+'</b> <span class="su">'+esc(who)+'</span> '+nm+'</span>'+split+'<b>'+Math.round(r.doses[f.id]*1000)+' g/place</b></div>';
-        return '<div class="trow" style="padding-left:22px"><span class="vv" style="flex:1">'+nm+'</span>'+split+'<b>'+Math.round(r.doses[f.id]*1000)+' g/place</b></div>';
-      }
-      lines+=(fed.length===1)?feedLine(fed[0],true):('<div class="trow">'+dots+'<span class="vv" style="flex:1">places <b>'+(r.k1+1)+'–'+r.k2+'</b> <span class="su">'+esc(who)+'</span></span></div>'+fed.map(function(f){return feedLine(f,false);}).join(''));
-    });
-    cards+='<div class="fcard"><div class="fc-top"><span class="fc-name">'+names[t]+'</span><span class="su">total '+fmt(tot,1)+' kg</span></div>'+((lines)||'<div class="vv">rien à verser</div>')+'</div>';
-  }
-  var ctrl='';
-  M.controle(state).forEach(function(c){
-    var l=lotById(c.id);
-    ctrl+='<div class="trow"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="vv" style="flex:1">'+esc(lotShort(l))+' · <b>'+fmt(c.kg)+' kg</b> sur ses '+c.pl+' places</span><span class="vv">÷ '+c.b+' têtes = <b>'+c.g+' g/j</b> '+ic('check',11)+'</span></div>';
-  });
-  return head+cards+
-    '<div class="tot">À verser au total <b>'+fmt(grand)+' kg</b></div>'+
-    ((ctrl)?'<div class="ph">'+ic('check',14)+' Contrôle par lot</div>'+ctrl:'')+
-    '<div class="hint">Places numérotées depuis la gauche. La trémie verse au milieu du tapis : une seule ration pour les 2 rangées — « 2 × » la dose par rangée, impossible à séparer entre 2 lots. Contrôle par lot : total versé ÷ effectif = sa ration g/j.</div>';
+function save(){storageKo=!S.enregistrer(state);}
+var vue='plan',sel=null,arm=null,editName=null,editFeed=null,editDose=null,showUnique=false;
+try{var vv=localStorage.getItem('bergerie_vue');if(vv&&/^(plan|rations|tremies|controle|reglages)$/.test(vv))vue=vv;}catch(e){}
+if(boot.source==='v5'||boot.source==='v3'){
+  notice='Données reprises de l’ancienne version. Les trémies sont figées sur les doses qu’elle affichait : vérifie l’onglet Trémies.';
 }
-function fmt(n,d){if(d==null)d=2;return (+(n.toFixed(d))).toFixed(d).replace('.',',');}
-function pnum(v){var x=parseFloat(String(v).replace(',','.'));return isNaN(x)?0:x;}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+/* ============ utilitaires ============ */
 function $(id){return document.getElementById(id);}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function fmt(n,d){if(d==null)d=1;return (+(n.toFixed(d))).toFixed(d).replace('.',',');}
+function gr(kg){return Math.round(kg*1000);}
+function pnum(v){var x=parseFloat(String(v).replace(',','.').replace(/\s/g,''));return isNaN(x)?0:x;}
+function pct(p){if(p==null)return '';var r=Math.round(p*10)/10;return (r>0?'+':(r<0?'−':''))+fmt(Math.abs(r),1).replace(',0','')+' %';}
+function lotById(id){return M.lotById(state,id);}
+function lotStats(id){return M.lotStats(state,id);}
+function lotCol(id){return LOT_COLS[id%LOT_COLS.length];}
+function feedCol(id){return FEED_COLS[id%FEED_COLS.length];}
+function lotName(l){return l?(l.name?l.name:'Lot '+(l.id+1)):'—';}
+function lotShort(l){return l?(l.name?l.name.slice(0,16):'Lot '+(l.id+1)):'—';}
+function dateFr(iso){var d=new Date(iso);return ('0'+d.getDate()).slice(-2)+'/'+('0'+(d.getMonth()+1)).slice(-2)+' à '+d.getHours()+'h'+('0'+d.getMinutes()).slice(-2);}
+function badge(b){
+  if(b.niveau==='vide')return '<span class="badge n-vide">'+(b.b>0?'pas de place':'pas de brebis')+'</span>';
+  var t=NIV[b.niveau]+(b.pct!=null&&b.niveau!=='ok'?' · '+(b.sens==='+'?'trop':'pas assez'):'');
+  return '<span class="badge n-'+b.niveau+'">'+(b.niveau==='ok'?ic('check',14):(b.niveau==='hors'?ic('warn',14):''))+(b.pct!=null?pct(b.pct)+' · ':'')+t+'</span>';
+}
+function noticeHtml(){
+  return (storageKo?'<div class="note ko">'+ic('warn',18)+'<span>Impossible d’enregistrer sur ce téléphone (navigation privée ?) : tes saisies seraient perdues à la fermeture. Ouvre la page dans un navigateur normal, ou exporte tes données.</span></div>':'')+
+    (notice?'<div class="note'+(noticeKo?' ko':'')+'" id="notice">'+ic('info',18)+'<span class="sp">'+esc(notice)+'</span><button class="ico" style="width:32px;height:32px;background:none" data-act="noticeX" aria-label="Fermer">'+ic('close',16)+'</button></div>':'');
+}
+function pire(bs){var o={vide:0,ok:1,attention:2,hors:3},w='vide';bs.forEach(function(b){if(o[b.niveau]>o[w])w=b.niveau;});return w;}
 
-/* ============ sauvegarde fichier (export / import) ============ */
-function exportData(){
-  try{
-    var data=M.exportJson(state);
-    var a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
-    a.download='bergerie-'+new Date().toISOString().slice(0,10)+'.json';
-    document.body.appendChild(a);
-    a.click();
-    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
-    notice='Sauvegarde téléchargée — garde-la précieusement.';
-  }catch(e){notice='Export impossible sur ce navigateur.';}
-  save();renderPanel();
+/* ============ rendu général ============ */
+function render(){
+  /* garder la saisie en cours (valeur tapée, curseur) */
+  var a=document.activeElement,keep=null;
+  if(a&&a.id&&a.tagName==='INPUT')keep={id:a.id,v:a.value,s:a.selectionStart,e:a.selectionEnd};
+  var bs=M.bilans(state);
+  renderHeader();renderNav(bs);
+  ['plan','rations','tremies','controle','reglages'].forEach(function(v){$('v-'+v).classList.toggle('on',v===vue);});
+  if(vue==='plan'){renderMap(bs);renderPlanBas(bs);}
+  else if(vue==='rations')$('v-rations').innerHTML=rationsHtml(bs);
+  else if(vue==='tremies')$('v-tremies').innerHTML=tremiesHtml();
+  else if(vue==='controle')$('v-controle').innerHTML=controleHtml(bs);
+  else $('v-reglages').innerHTML=reglagesHtml();
+  if(keep){var el=$(keep.id);if(el){el.value=keep.v;el.focus();try{el.setSelectionRange(keep.s,keep.e);}catch(e){}}}
 }
-function importJson(text){return M.importJson(text);}
-function applyImport(text){
-  var r=importJson(text);
-  if(r.ok){S.copieAvant(state,'import');state=r.state;sel=null;showTrie=false;notice=r.msg;save();renderMap();renderTabs();renderPanel();}
-  else{notice=r.msg;renderPanel();}
+function renderHeader(){
+  var p=$('pill');
+  if(state.fige){p.className='pill';p.innerHTML=ic('lock',16)+'Trémies figées';}
+  else{p.className='pill regler';p.innerHTML=ic('unlock',16)+'Trémies à régler';}
 }
-function doImport(file){
-  if(!file)return;
-  try{
-    var rd=new FileReader();
-    rd.onload=function(){applyImport(String(rd.result));};
-    rd.onerror=function(){notice='Fichier illisible.';renderPanel();};
-    rd.readAsText(file);
-  }catch(e){notice='Import impossible sur ce navigateur.';renderPanel();}
+function renderNav(bs){
+  var w=pire(bs.filter(function(b){return b.b>0;}));
+  var t=[['plan','plan','Plan'],['rations','ration','Rations'],['tremies','hopper','Trémies'],['controle','ctrl','Contrôle'],['reglages','gear','Réglages']];
+  $('nav').innerHTML=t.map(function(x){
+    var al=x[0]==='controle'&&(w==='attention'||w==='hors')?'<span class="alerte" style="background:var(--'+(w==='hors'?'hors':'att')+')"></span>':'';
+    return '<button data-vue="'+x[0]+'" class="'+(vue===x[0]?'on':'')+'">'+ic(x[1],22)+'<span>'+x[2]+'</span>'+al+'</button>';
+  }).join('');
 }
+function goVue(v){vue=v;sel=null;arm=null;editName=null;editFeed=null;editDose=null;showUnique=false;try{localStorage.setItem('bergerie_vue',v);}catch(e){}render();$('v-'+v).scrollTop=0;document.querySelector('main').scrollTop=0;if(v==='plan')setTimeout(fitView,0);}
 
+/* ============ PLAN ============ */
 var svg=$('map');
 var view={x:0,y:0,w:35.8,h:23.2};
 function setVB(){svg.setAttribute('viewBox',view.x+' '+view.y+' '+view.w+' '+view.h);}
 function fitView(){
-  var r=svg.getBoundingClientRect();
+  var r=svg.getBoundingClientRect();if(!r.width)return;
   var s=Math.min(r.width/35.8,Math.max(r.height,1)/23.2);
-  view.w=r.width/s;view.h=r.height/s;
-  view.x=17.5-view.w/2;view.y=11-view.h/2;
-  setVB();
+  view.w=r.width/s;view.h=r.height/s;view.x=17.5-view.w/2;view.y=11-view.h/2;setVB();
 }
-function clampView(){
-  var cx=view.x+view.w/2,cy=view.y+view.h/2;
-  cx=Math.max(-4,Math.min(L+4,cx));cy=Math.max(-3,Math.min(W+3,cy));
-  view.x=cx-view.w/2;view.y=cy-view.h/2;
-}
+function clampView(){var cx=view.x+view.w/2,cy=view.y+view.h/2;cx=Math.max(-4,Math.min(L+4,cx));cy=Math.max(-3,Math.min(W+3,cy));view.x=cx-view.w/2;view.y=cy-view.h/2;}
 function zoomAt(cx,cy,f){
   var r=svg.getBoundingClientRect();
-  var px=view.x+((cx-r.left)/r.width)*view.w;
-  var py=view.y+((cy-r.top)/r.height)*view.h;
+  var px=view.x+((cx-r.left)/r.width)*view.w,py=view.y+((cy-r.top)/r.height)*view.h;
   var nw=Math.max(6,Math.min(90,view.w*f));f=nw/view.w;
-  view.w*=f;view.h*=f;
-  view.x=px-((cx-r.left)/r.width)*view.w;
-  view.y=py-((cy-r.top)/r.height)*view.h;
+  view.w*=f;view.h*=f;view.x=px-((cx-r.left)/r.width)*view.w;view.y=py-((cy-r.top)/r.height)*view.h;
   clampView();setVB();
 }
-
-/* ============ dessin ============ */
-function renderMap(){
+var NIVCOL={ok:'#2f7d4a',attention:'#c77a12',hors:'#c0392f',vide:'#9a9187'};
+function renderMap(bs){
+  bs=bs||M.bilans(state);
+  var bm={};bs.forEach(function(b){bm[b.id]=b;});
   var o=[];
   o.push('<rect x="0" y="0" width="'+L+'" height="'+W+'" fill="#f0ead9"/>');
   o.push('<rect x="0" y="20" width="'+L+'" height="2" fill="#e7efe4" stroke="#b9cdb6" stroke-width="0.06"/>');
-  o.push('<text x="'+(L/2)+'" y="21.2" font-size="0.85" fill="#6f8a6b" text-anchor="middle">Couloir d’alimentation</text>');
-  AIRES.forEach(function(b){
-    o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#f6efdd" stroke="#cfc7b8" stroke-width="0.05"/>');
-  });
+  o.push('<text x="'+(L/2)+'" y="21.25" font-size="0.85" fill="#6f8a6b" text-anchor="middle">Couloir d’alimentation</text>');
+  AIRES.forEach(function(b){o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#f6efdd" stroke="#cfc7b8" stroke-width="0.05"/>');});
   TAPIS.forEach(function(b){
     o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#e6ddca"/>');
     o.push('<rect x="0" y="'+b.y+'" width="'+b.x1+'" height="'+b.h+'" fill="#d7e5d2" stroke="#cfc7b8" stroke-width="0.05"/>');
   });
   AIRES.forEach(function(b,i){
-    segsOf(i).forEach(function(sg){
-      var left=xOfK(sg.k1), right=sg.isLast?L:xOfK(sg.k2);
-      if(right-left<=0)return;
-      o.push('<rect x="'+left+'" y="'+b.y+'" width="'+(right-left)+'" height="'+b.h+'" fill="'+lotCol(sg.lot)+'" opacity="0.55"/>');
-      if(sel&&sel.t==='seg'&&sel.i===i&&sel.j===sg.j)
-        o.push('<rect x="'+left+'" y="'+(b.y-0.05)+'" width="'+(right-left)+'" height="'+(b.h+0.1)+'" fill="none" stroke="#3c7a4e" stroke-width="0.22"/>');
-      var cx=(left+right)/2,w=right-left,lo=lotById(sg.lot);
-      if(w>=1.6){
-        o.push('<text x="'+cx+'" y="'+(b.y+b.h/2-0.1)+'" font-size="0.75" font-weight="700" fill="#33402f" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="0.12" stroke-opacity="0.85">'+esc(lotShort(lo))+'</text>');
-        var bb=lo?(lo.b||0):0, gj=lo?Math.round(sumRations(lo)*1000):0;
-        var l2=bb>0?(bb+' têtes'+(gj>0?' · '+gj+' g/j':'')):'';
-        if(l2&&w>=3.0)o.push('<text x="'+cx+'" y="'+(b.y+b.h/2+0.85)+'" font-size="0.55" fill="#5a5248" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="0.1" stroke-opacity="0.85">'+l2+'</text>');
+    M.segsOf(state,i).forEach(function(sg){
+      var left=M.xOfK(sg.k1),right=sg.isLast?L:M.xOfK(sg.k2);if(right-left<=0)return;
+      o.push('<rect x="'+left+'" y="'+b.y+'" width="'+(right-left)+'" height="'+b.h+'" fill="'+lotCol(sg.lot)+'" opacity="0.6"/>');
+      if(sel&&sel.t==='seg'&&sel.i===i&&sel.j===sg.j)o.push('<rect x="'+left+'" y="'+(b.y-0.05)+'" width="'+(right-left)+'" height="'+(b.h+0.1)+'" fill="none" stroke="#2f6b43" stroke-width="0.24"/>');
+      var cx=(left+right)/2,w=right-left,lo=lotById(sg.lot),bl=bm[sg.lot];
+      if(w>=1.8){
+        o.push('<text x="'+cx+'" y="'+(b.y+b.h/2-0.15)+'" font-size="0.8" font-weight="700" fill="#2b3527" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.14" stroke-opacity="0.9">'+esc(lotShort(lo))+'</text>');
+        if(bl&&bl.b>0&&w>=3.4){
+          var l2=bl.b+' têtes · '+gr(bl.recu)+' g/j',hw=l2.length*0.155;
+          o.push('<circle cx="'+(cx-hw-0.15)+'" cy="'+(b.y+b.h/2+0.66)+'" r="0.24" fill="'+NIVCOL[bl.niveau]+'"/>');
+          o.push('<text x="'+(cx+0.2)+'" y="'+(b.y+b.h/2+0.86)+'" font-size="0.6" font-weight="600" fill="#433d36" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.85">'+l2+'</text>');
+        }
       }
     });
   });
-  AIRES.forEach(function(b){
-    o.push('<text x="0.45" y="'+(b.y+0.85)+'" font-size="0.75" fill="#9a8f7c" paint-order="stroke" stroke="#ffffff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');
-  });
+  AIRES.forEach(function(b){o.push('<text x="0.45" y="'+(b.y+0.85)+'" font-size="0.72" fill="#958a77" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');});
   TAPIS.forEach(function(b,tix){
-    o.push('<text x="0.4" y="'+(b.y+0.28)+'" font-size="0.44" fill="#4f6b4a" paint-order="stroke" stroke="#ffffff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');
+    o.push('<text x="0.4" y="'+(b.y+0.28)+'" font-size="0.42" fill="#4f6b4a" paint-order="stroke" stroke="#fff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');
     var maxK=(tix===3?TS_PL:DBL_PL);
-    for(var kk=10;kk<maxK;kk+=10){
-      var tx=xOfK(kk);
+    for(var kk=10;kk<maxK-4;kk+=10){
+      var tx=M.xOfK(kk);
       o.push('<line x1="'+tx+'" y1="'+(b.y+0.38)+'" x2="'+tx+'" y2="'+(b.y+0.66)+'" stroke="#a3b89f" stroke-width="0.045"/>');
-      o.push('<text x="'+tx+'" y="'+(b.y+0.64)+'" font-size="0.36" fill="#54704f" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="0.08" stroke-opacity="0.8">'+kk+'</text>');
+      o.push('<text x="'+tx+'" y="'+(b.y+0.64)+'" font-size="0.36" fill="#54704f" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.08" stroke-opacity="0.8">'+kk+'</text>');
     }
-    o.push('<text x="'+(b.x1-0.15)+'" y="'+(b.y+0.64)+'" font-size="0.36" font-weight="700" fill="#54704f" text-anchor="end" paint-order="stroke" stroke="#ffffff" stroke-width="0.08" stroke-opacity="0.8">'+maxK+'</text>');
+    o.push('<text x="'+(b.x1-0.15)+'" y="'+(b.y+0.64)+'" font-size="0.36" font-weight="700" fill="#54704f" text-anchor="end" paint-order="stroke" stroke="#fff" stroke-width="0.08" stroke-opacity="0.8">'+maxK+'</text>');
   });
   AIRES.forEach(function(b,i){
     var ab=state.airs[i];
     ab.barriers.forEach(function(k,p){
       var drag=(gest&&gest.mode==='bar'&&gest.bar&&gest.bar.i===i&&gest.bar.p===p);
-      var x=xOfK(k),isSel=(sel&&sel.t==='bar'&&sel.i===i&&sel.p===p)||drag,sc=isSel?'#e3812f':'#a34e37';
+      var x=M.xOfK(k),isSel=(sel&&sel.t==='bar'&&sel.i===i&&sel.p===p)||drag,sc=isSel?'#e3812f':'#a34e37';
       o.push('<line x1="'+x+'" y1="'+b.y+'" x2="'+x+'" y2="'+(b.y+b.h)+'" stroke="'+sc+'" stroke-width="'+(isSel?0.3:0.2)+'" stroke-dasharray="0.55 0.35"/>');
-      o.push('<circle cx="'+x+'" cy="'+(b.y+b.h/2)+'" r="'+(isSel?0.55:0.45)+'" fill="'+sc+'" stroke="#ffffff" stroke-width="0.09"/>');
+      o.push('<circle cx="'+x+'" cy="'+(b.y+b.h/2)+'" r="'+(isSel?0.58:0.46)+'" fill="'+sc+'" stroke="#fff" stroke-width="0.09"/>');
       if(isSel){
-        var g=k-(p===0?0:ab.barriers[p-1]), d=(p===ab.barriers.length-1?DBL_PL:ab.barriers[p+1])-k;
-        o.push('<text x="'+x+'" y="'+(b.y+0.5)+'" font-size="0.6" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">col. '+k+'</text>');
-        o.push('<text x="'+x+'" y="'+(b.y+1.15)+'" font-size="0.5" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">◀ '+g+' pl · '+d+' pl ▶</text>');
+        var g=k-(p===0?0:ab.barriers[p-1]),d=(p===ab.barriers.length-1?DBL_PL:ab.barriers[p+1])-k;
+        o.push('<text x="'+x+'" y="'+(b.y+0.55)+'" font-size="0.6" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">col. '+k+'</text>');
+        o.push('<text x="'+x+'" y="'+(b.y+1.2)+'" font-size="0.5" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">'+g+' pl | '+d+' pl</text>');
       }
     });
   });
   o.push('<rect x="0" y="0" width="'+L+'" height="'+W+'" fill="none" stroke="#7a6f63" stroke-width="0.16"/>');
   svg.innerHTML=o.join('');
 }
-
-/* ============ onglets & panneau ============ */
-function setPanelMin(v){
-  panelMin=v;
-  var sd=$('side');if(sd){if(v)sd.classList.add('min');else sd.classList.remove('min');}
-  var pc=$('pcol');if(pc)pc.innerHTML=(v?ic('chevD',13)+'<span>Détails</span>':ic('chevU',13)+'<span>Masquer</span>');
-}
-function renderTabs(){
-  var h='',homeOn=!sel&&!showTrie&&!(sel&&sel.t==='new');
-  h+='<button class="tab'+(homeOn?' on':'')+'" data-tab="home">'+ic('plan',13)+'<span>Bergerie</span></button>';
-  state.lots.forEach(function(l){
-    var on=!showTrie&&sel&&((sel.t==='lot'&&sel.id===l.id)||(sel.t==='seg'&&state.airs[sel.i].lots[sel.j]===l.id));
-    h+='<button class="tab'+(on?' on':'')+'" data-tab="lot" data-id="'+l.id+'"><span class="dot" style="background:'+lotCol(l.id)+'"></span>'+esc(lotShort(l))+'</button>';
-  });
-  h+='<button class="tab'+(sel&&sel.t==='new'?' on':'')+'" data-tab="new">'+ic('plus',13)+'<span>Lot</span></button>';
-  h+='<button class="tab'+(showTrie?' on':'')+'" data-tab="trie">'+ic('hopper',13)+'<span>Trémies</span></button>';
-  $('tabs').innerHTML=h;
-  Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'),function(b){
-    b.addEventListener('click',function(){
-      var t=b.getAttribute('data-tab');
-      notice='';editName=null;editFeed=null;
-      if(t==='home'){sel=null;showTrie=false;}
-      else if(t==='lot'){sel={t:'lot',id:+b.getAttribute('data-id')};showTrie=false;}
-      else if(t==='new'){sel={t:'new'};showTrie=false;}
-      else{showTrie=true;sel=null;}
-      if(t!=='home')setPanelMin(false);
-      renderMap();renderTabs();renderPanel();
-    });
-  });
-}
-
-function segsTxt(st){return st.segs.map(function(s){return 'Aire '+s.air+' (col. '+s.k1+'–'+s.k2+')';}).join(' · ')||'aucun morceau';}
 function chipsHtml(cur){
-  var h='';
-  state.lots.forEach(function(l){
-    h+='<button class="chip'+(l.id===cur?' on':'')+'" data-lot="'+l.id+'" style="background:'+lotCol(l.id)+'">'+esc(lotShort(l))+'</button>';
-  });
-  h+='<button class="chip" data-lot="new">'+ic('plus',11)+' Lot</button>';
-  return h;
+  return state.lots.map(function(l){return '<button class="chip'+(l.id===cur?' on':'')+'" data-act="assign" data-lot="'+l.id+'" style="background:'+lotCol(l.id)+'">'+esc(lotShort(l))+'</button>';}).join('')+
+    '<button class="chip" data-act="assign" data-lot="new">'+ic('plus',14)+' Nouveau lot</button>';
 }
-function noticeHtml(){
-  return (storageKo?'<div class="notice ko">'+ic('warn',14)+'<span>Impossible d’enregistrer sur ce téléphone (navigation privée ?) : tes saisies seraient perdues à la fermeture. Ouvre la page dans un navigateur normal, ou exporte tes données.</span></div>':'')+
-    (notice?'<div class="notice">'+ic('info',14)+'<span>'+esc(notice)+'</span></div>':'');
-}
-function lotSection(id,withClose){
-  var l=lotById(id),st=lotStats(id);
-  if(!l)return '';
-  l.b=l.b||0;
-  var nameHtml;
-  if(editName===id){
-    nameHtml='<input id="editNameIn" value="'+esc(l.name||'')+'" placeholder="Nom du lot" style="flex:1;min-width:110px;text-align:left;font-weight:700">'+
-      '<button class="btnsm" id="btnNameOk">'+ic('check',12)+'</button><button class="btnsm" id="btnNameNo">'+ic('close',12)+'</button>';
-  }else{
-    nameHtml=esc(lotName(l))+'<button class="btnsm" id="btnRename">'+ic('pen',12)+'</button><button class="btnsm'+(arm==='lot:'+id?' danger':'')+'" id="btnDelLot">'+(arm==='lot:'+id?'Confirmer':ic('trash',12))+'</button>';
-  }
-  var cards='',max=0;
-  var pMode=state.pref||'kg';
-  state.feeds.forEach(function(f){max=Math.max(max,lotTot(l,f.id),feedVal(l,f.id));});
-  state.feeds.forEach(function(f){
-    var r=feedVal(l,f.id),t=lotTot(l,f.id),pp=perPlace(l,f.id)*1000;
-    var anchored=ppVal(l,f.id)!=null;
-    var w=max>0?Math.max(2,Math.round(Math.max(t,r)/max*100)):0;
-    var row;
-    if(pMode==='place'){
-      row='<div class="fc-row"><input class="short" id="pp_'+f.id+'" inputmode="decimal" value="'+Math.round(pp)+'"><span class="vv">g/place</span>'+
-        '<span class="su">'+((l.b||0)>0?'par brebis : '+Math.round(r*1000)+' g/j':'par brebis : —')+'</span>'+
-        '<span class="su">'+fmt(t,1)+' kg</span></div>';
-    }else if(pMode==='kg'){
-      row='<div class="fc-row"><input class="short" id="ft_'+f.id+'" inputmode="decimal" value="'+fmt(t,2)+'"><span class="vv">kg à verser</span><span class="vv">·</span><span class="vv">par brebis :</span><input class="short" id="fg_'+f.id+'" inputmode="decimal" value="'+Math.round(r*1000)+'"><span class="vv">g/j</span></div>';
-    }else{
-      row='<div class="fc-row"><input class="short" id="fg_'+f.id+'" inputmode="decimal" value="'+Math.round(r*1000)+'"><span class="vv">g/brebis/j</span><span class="vv">·</span><span class="vv">kg du lot :</span><input class="short" id="ft_'+f.id+'" inputmode="decimal" value="'+fmt(t,2)+'"><span class="vv">kg</span></div>';
+function renderPlanBas(bs){
+  var h=noticeHtml();
+  if(sel&&sel.t==='seg'){
+    var i=sel.i,j=sel.j,sg=M.segsOf(state,i)[j];
+    if(!sg){sel=null;}else{
+      var n=sg.k2-sg.k1,det=i===1||i===2?n+' col. × 2 tapis = '+sg.pl+' places':(i===0?n+' places au tapis 1':n+' + '+sg.ts+' (tapis simple) = '+sg.pl+' places');
+      h+='<div class="carte"><div class="ligne"><span class="nom sp">'+AIRES[i].lab+' · colonnes '+sg.k1+' à '+sg.k2+'</span><button class="ico" data-act="desel" aria-label="Fermer">'+ic('close')+'</button></div>'+
+        '<div class="muet petit" style="margin:4px 0 10px">'+det+'</div><div class="ligne" style="gap:8px">'+chipsHtml(sg.lot)+'</div>'+
+        '<div class="sep"></div><button class="btn" data-act="cut">'+ic('plus')+' Barrière au milieu</button></div>';
     }
-    cards+='<div class="fcard" style="background:'+colFeed(f.id)+'1e">'+
-      '<div class="fc-top"><span class="dot" style="background:'+colFeed(f.id)+'"></span><span class="fc-name">'+esc(f.name)+'</span><span class="su" id="fp_'+f.id+'">'+(pp>0.5?(anchored?'réglée : ':'≈ ')+Math.round(pp)+' g/place':'—')+'</span></div>'+
-      '<div class="fc-bar"><div class="fc-fill" id="fbar_'+f.id+'" style="background:'+colFeed(f.id)+';width:'+w+'%"></div></div>'+
-      row+
+  }else if(sel&&sel.t==='bar'){
+    var a=state.airs[sel.i],k=a.barriers[sel.p];
+    if(k==null){sel=null;}else{
+      var lL=lotById(a.lots[sel.p]),lR=lotById(a.lots[sel.p+1]);
+      var gL=k-(sel.p===0?0:a.barriers[sel.p-1]),gR=(sel.p===a.barriers.length-1?DBL_PL:a.barriers[sel.p+1])-k;
+      h+='<div class="carte"><div class="ligne"><span class="nom sp">Barrière · '+AIRES[sel.i].lab+', colonne '+k+'</span><button class="ico" data-act="desel" aria-label="Fermer">'+ic('close')+'</button></div>'+
+        '<div class="muet petit" style="margin:4px 0 10px">À gauche : '+esc(lotShort(lL))+' ('+gL+' col.) · à droite : '+esc(lotShort(lR))+' ('+gR+' col.)</div>'+
+        '<div class="ligne"><button class="btn" data-act="barL">'+ic('left')+' 1 place</button><button class="btn" data-act="barR">1 place '+ic('right')+'</button><span class="sp"></span><button class="btn danger" data-act="barDel">'+ic('trash')+' Supprimer</button></div></div>';
+    }
+  }
+  h+='<h2>Lots · '+state.lots.length+'</h2>';
+  var bm={};bs.forEach(function(b){bm[b.id]=b;});
+  state.lots.forEach(function(l){
+    var b=bm[l.id],st=lotStats(l.id);
+    h+='<div class="carte barre n-'+b.niveau+'-b"><div class="lotc">'+
+      '<span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span>'+
+      '<div class="info"><div class="nom">'+esc(lotName(l))+'</div><div class="muet petit">'+st.P+' places'+(b.b>0&&st.P>0?' · reçoit <b class="num" style="color:var(--encre)">'+gr(b.recu)+' g/j</b>':'')+'</div></div>'+
+      '<div class="pas"><button data-act="b-" data-lot="'+l.id+'" aria-label="Une brebis de moins">−</button><input class="champ num" id="eff_'+l.id+'" data-act="eff" data-lot="'+l.id+'" inputmode="numeric" value="'+(l.b||0)+'" aria-label="Effectif"><button data-act="b+" data-lot="'+l.id+'" aria-label="Une brebis de plus">+</button></div>'+
+      '</div><div class="ligne" style="margin-top:8px">'+badge(b)+'</div></div>';
+  });
+  h+='<button class="btn plein" data-act="newLot" style="margin-top:6px">'+ic('plus')+' Nouveau lot</button>';
+  h+='<div class="hint">Touche un morceau d’aire pour changer son lot · appui long : nouvelle barrière · glisse une barrière pour la déplacer · deux doigts : zoom.'+(state.fige?' Trémies figées : les doses ne bougent pas, la ration par brebis se recalcule.':'')+'</div>';
+  $('planBas').innerHTML=h;
+}
+
+/* ============ RATIONS ============ */
+function rationsHtml(bs){
+  var kg=state.pref==='kg',h=noticeHtml();
+  h+='<div class="ligne" style="margin:2px 0 4px"><span class="muet petit sp">Je saisis la ration voulue en</span><span class="seg"><button data-act="pref" data-v="per" class="'+(kg?'':'on')+'">g/brebis/j</button><button data-act="pref" data-v="kg" class="'+(kg?'on':'')+'">kg du lot</button></span></div>';
+  if(state.fige)h+='<div class="note">'+ic('lock',18)+'<span>Trémies figées : changer une ration ne change pas les trémies, ça déplace le repère du contrôle. Pour régler les trémies sur ces rations : onglet Trémies, « Recalculer ».</span></div>';
+  else h+='<div class="note">'+ic('info',18)+'<span>Les doses à régler aux trémies suivent ces rations. Une fois les trémies réglées, fige-les dans l’onglet Trémies.</span></div>';
+  if(!state.feeds.length)return h+'<div class="carte muet">Aucun aliment : ajoute-en dans Réglages.</div>';
+  var bm={};bs.forEach(function(b){bm[b.id]=b;});
+  state.lots.forEach(function(l){
+    var b=bm[l.id],st=lotStats(l.id);
+    var nm=editName===l.id
+      ?'<input class="champ txt" id="nameIn" value="'+esc(l.name||'')+'" placeholder="Nom du lot"><button class="ico" data-act="nameOk" data-lot="'+l.id+'" aria-label="Valider">'+ic('check')+'</button>'
+      :'<span class="nom sp">'+esc(lotName(l))+'</span><button class="ico" data-act="rename" data-lot="'+l.id+'" aria-label="Renommer">'+ic('pen')+'</button><button class="ico'+(arm==='lot:'+l.id?' danger':'')+'" data-act="delLot" data-lot="'+l.id+'" aria-label="Supprimer">'+(arm==='lot:'+l.id?'OK ?':ic('trash'))+'</button>';
+    h+='<div class="carte barre n-'+b.niveau+'-b"><div class="ligne"><span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span>'+nm+'</div>'+
+      '<div class="muet petit" style="margin:4px 0 6px">'+(l.b||0)+' têtes · '+st.P+' places'+(l.b>0?'':' · saisis l’effectif dans Plan')+'</div>';
+    state.feeds.forEach(function(f){
+      var v=M.voulue(l,f.id),a=b.aliments[f.id],val=kg?fmt((l.b||0)*v,1):String(gr(v));
+      var res=state.fige
+        ?(l.b>0?'reçoit <b class="num">'+gr(a.recu)+' g</b>':'')
+        :(l.b>0&&st.P>0?'<b class="num">'+gr(M.part(state,l,f.id))+' g</b>/place':'');
+      h+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(f.id)+'"></span>'+esc(f.name)+'</span>'+
+        '<input class="champ num" id="r_'+l.id+'_'+f.id+'" data-act="ration" data-lot="'+l.id+'" data-feed="'+f.id+'" inputmode="decimal" value="'+val+'"'+(kg&&!(l.b>0)?' disabled':'')+'>'+
+        '<span class="muet petit" style="width:34px">'+(kg?'kg':'g')+'</span><span class="petit" style="min-width:92px;text-align:right">'+res+'</span></div>';
+    });
+    var tv=M.voulueTot(state,l);
+    h+='<div class="sep"></div><div class="ligne"><span class="muet">Ration voulue</span><span class="sp"></span><span class="moyen num">'+gr(tv)+' g/j</span><span class="tag num">'+fmt((l.b||0)*tv,1)+' kg</span></div>'+
+      (state.fige&&l.b>0?'<div class="ligne" style="margin-top:6px"><span class="muet">Reçoit</span><span class="sp"></span><span class="moyen num">'+gr(b.recu)+' g/j</span>'+badge(b)+'</div>':'')+
+      (state.lots.length>1?'<div style="margin-top:10px"><button class="btn mini" data-act="copyAll" data-lot="'+l.id+'">'+ic('copy',16)+' Même ration pour tous les lots</button></div>':'')+
       '</div>';
   });
-  if(!state.feeds.length)cards='<div class="vv">Aucun aliment : ajoute-en depuis l’onglet Bergerie.</div>';
-  var tot=(l.b||0)*sumRations(l),perAll=sumRations(l)*1000;
-  return '<div class="ph"><span class="dot" style="background:'+lotCol(id)+'"></span>'+nameHtml+
-      (withClose?'<button class="closep" id="pClose">'+ic('close',12)+'</button>':'')+'</div>'+
-    '<div class="row"><span class="lbl">Brebis</span><button class="step" data-step="-1">−</button><input id="inB" inputmode="numeric" value="'+l.b+'" style="width:70px"><button class="step" data-step="1">+</button></div>'+
-    '<div class="row"><span class="lbl">Morceaux</span><span class="vv">'+segsTxt(st)+'</span></div>'+
-    '<div class="row"><span class="lbl">Places</span><span class="vv">T1 '+st.t[0]+' · T2 '+st.t[1]+' · T3 '+st.t[2]+' · TS '+st.t[3]+' → <b>'+st.P+' places</b></span></div>'+
-    '<div class="sep"></div>'+
-    '<div class="row"><span class="lbl">Je saisis en</span><button class="chip'+(pMode==='kg'?' on':'')+'" id="prefKg">kg</button><button class="chip'+(pMode==='per'?' on':'')+'" id="prefPer">g/brebis</button><button class="chip'+(pMode==='place'?' on':'')+'" id="prefPlc">g/place</button></div>'+
-    cards+
-    '<div class="tot">À verser au lot <b id="totKg">'+fmt(tot)+' kg</b><span class="su" id="totPer">'+((l.b||0)>0?'soit ≈ '+Math.round(perAll)+' g/brebis/j':'saisis les brebis')+'</span></div>'+
-    '<div class="row"><button class="act" id="btnApplyR">Appliquer ces rations à tous les lots</button></div>'+
-    '<div class="hint">Saisis dans le sens qui t’arrange avec « Je saisis en ». En « g/place » la dose réglée à la trémie ne bouge plus : bouge les barrières, change les effectifs, crée des lots — l’appli recalcule la ration par brebis. Le choix est mémorisé.</div>';
-}
-function feedsManagerHtml(){
-  var h='<div class="ph">Aliments</div>';
-  state.feeds.forEach(function(f){
-    if(editFeed===f.id){
-      h+='<div class="fc-row" style="margin:4px 0"><span class="dot" style="background:'+colFeed(f.id)+'"></span><input id="editFeedIn" value="'+esc(f.name)+'" style="flex:1;min-width:110px;text-align:left"><button class="btnsm" id="btnFeedOk">'+ic('check',12)+'</button><button class="btnsm" id="btnFeedNo">'+ic('close',12)+'</button></div>';
-    }else{
-      h+='<div class="fc-row" style="margin:4px 0"><button class="chip" data-renamef="'+f.id+'" style="background:'+colFeed(f.id)+'1e"><span class="dot" style="background:'+colFeed(f.id)+'"></span>'+esc(f.name)+'</button>'+
-        '<button class="btnsm'+(arm==='feed:'+f.id?' danger':'')+'" data-delf="'+f.id+'">'+(arm==='feed:'+f.id?'Confirmer':ic('trash',12))+'</button></div>';
-    }
-  });
-  h+='<div class="fc-row" style="margin:6px 0"><input id="newFeed" placeholder="nom de l’aliment" style="width:150px;text-align:left"><button class="chip" id="btnAddFeed">'+ic('plus',11)+' Aliment</button></div>';
   return h;
 }
-function createLot(name,i,j){
-  var id=state.nextLot++;
-  state.lots.push({id:id,b:0,r:{},pp:{},name:(name||'').trim()||null});
-  if(i!=null&&j!=null&&state.airs[i])state.airs[i].lots[j]=id;
-  sel={t:'lot',id:id};notice='';
-  save();renderMap();renderTabs();renderPanel();
+
+/* ============ TRÉMIES ============ */
+function tremiesHtml(){
+  var h=noticeHtml(),f=state.fige;
+  if(f){
+    h+='<div class="banniere n-ok">'+ic('lock',26)+'<div class="sp"><b>Figées depuis le '+dateFr(f.date)+'</b><span class="petit">Rien à toucher : barrières et effectifs peuvent bouger, les doses restent. Ce que reçoit chaque lot se lit dans Contrôle.</span></div></div>';
+    if(f.repris&&!notice)h+='<div class="note">'+ic('info',18)+'<span>Doses reprises de l’ancienne version : vérifie qu’elles correspondent à tes trémies. Touche une dose pour la corriger.</span></div>';
+    h+='<div class="ligne" style="gap:8px"><button class="btn'+(arm==='recalc'?' danger':'')+'" data-act="recalc">'+ic('unlock')+(arm==='recalc'?' Confirmer : recalculer':' Recalculer d’après les rations')+'</button><button class="btn" data-act="unique">'+ic('pen')+' Même dose partout</button></div>';
+    if(showUnique){
+      h+='<div class="carte"><div class="nom" style="margin-bottom:4px">Même dose sur toutes les places</div><div class="muet petit">Par place et par rangée. Les tapis doubles reçoivent 2 fois cette dose (une par côté).</div>';
+      state.feeds.forEach(function(fd){h+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span><input class="champ num" id="uni_'+fd.id+'" inputmode="decimal" placeholder="—"><span class="muet petit">g/place</span></div>';});
+      h+='<div class="ligne" style="margin-top:6px"><button class="btn prim" data-act="uniqueOk">'+ic('check')+' Appliquer</button><button class="btn" data-act="uniqueX">Annuler</button></div></div>';
+    }
+  }else{
+    h+='<div class="banniere n-attention">'+ic('unlock',26)+'<div class="sp"><b>À régler</b><span class="petit">Doses calculées d’après les rations voulues. Règle les trémies, puis fige : ensuite tu pourras bouger les lots sans rien recalculer.</span></div></div>';
+    h+='<button class="btn prim plein" data-act="figer">'+ic('lock')+' C’est réglé : figer les trémies</button>';
+  }
+  if(!state.feeds.length)return h+'<div class="carte muet">Aucun aliment : ajoute-en dans Réglages.</div>';
+  var pls=M.plages(state),pv=f?M.planVoulu(state):null,grand=0;
+  pls.forEach(function(rs,t){
+    var tot=0;rs.forEach(function(r){state.feeds.forEach(function(fd){tot+=(r.d[fd.id]||0)*(r.k2-r.k1);});});grand+=tot;
+    var lines='';
+    rs.forEach(function(r,ri){
+      var any=state.feeds.some(function(fd){return (r.d[fd.id]||0)>0.0005;});
+      var la=lotById(r.a),lb=r.b==null?null:lotById(r.b),same=r.b!=null&&r.b===r.a;
+      var who=r.b==null?esc(lotShort(la)):(same?esc(lotShort(la))+' des 2 côtés':esc(lotShort(la))+' + '+esc(lotShort(lb))+' · ration commune');
+      var dots='<span class="dot" style="background:'+lotCol(r.a)+'"></span>'+(r.b!=null&&!same?'<span class="dot" style="background:'+lotCol(r.b)+'"></span>':'');
+      lines+='<div class="plage"><div class="ligne" style="gap:8px">'+dots+'<b>Places '+(r.k1+1)+'–'+r.k2+'</b><span class="tag">'+who+'</span></div>';
+      if(!any&&!f){lines+='<div class="muet petit" style="padding:6px 0">rien à verser</div></div>';return;}
+      state.feeds.forEach(function(fd){
+        var d=r.d[fd.id]||0,dg=gr(d),key=t+':'+ri+':'+fd.id;
+        var deux=t<3?'<span class="tag num">2 × '+gr(d/2)+' g</span>':'';
+        var val;
+        if(f&&editDose===key)val='<input class="champ num" id="doseIn" value="'+dg+'" inputmode="decimal" data-t="'+t+'" data-k1="'+r.k1+'" data-k2="'+r.k2+'" data-feed="'+fd.id+'"><button class="ico" data-act="doseOk" aria-label="Valider">'+ic('check')+'</button>';
+        else if(f)val='<button class="val num" data-act="dose" data-key="'+key+'">'+dg+'<small>g/place</small></button>';
+        else val='<span class="val num">'+dg+'<small>g/place</small></span>';
+        var ec='';
+        if(f&&r.ecartCalcul){var dv=M.doseAt(pv[t],r.k1)[fd.id]||0;if(gr(dv)!==dg)ec='<div class="ecart" style="text-align:right">d’après les rations : '+gr(dv)+' g/place</div>';}
+        lines+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span>'+deux+val+'</div>'+ec;
+      });
+      lines+='</div>';
+    });
+    h+='<div class="carte"><div class="ligne"><span class="nom sp">'+NOMS_TAPIS[t]+'</span><span class="tag num">total '+fmt(tot,1)+' kg</span></div>'+lines+'</div>';
+  });
+  h+='<div class="carte ligne"><span class="muet sp">À verser au total</span><span class="moyen num">'+fmt(grand,1)+' kg</span></div>';
+  h+='<div class="hint">Places numérotées depuis la gauche. La trémie verse au milieu du tapis double : une seule dose pour les 2 rangées, chaque rangée en reçoit la moitié (« 2 × »). Impossible de séparer la ration de 2 lots face à face.</div>';
+  return h;
 }
-function renderPanel(){
-  renderTabs();
-  var el=$('panel');
-  if(showTrie){
-    el.innerHTML=noticeHtml()+trieHtml();
-    var ct=$('pCloseTrie');if(ct)ct.addEventListener('click',function(){showTrie=false;sel=null;renderTabs();renderPanel();});
-    return;
-  }
-  if(!sel){
-    var rows='',B=0,T=0,P=0;
-    state.lots.forEach(function(l){
-      var st=lotStats(l.id);B+=l.b||0;P+=st.P;T+=(l.b||0)*sumRations(l);
-      var minis='';
-      state.feeds.forEach(function(f){
-        var t=(l.b||0)*feedVal(l,f.id);
-        if(t>0)minis+='<span class="mini" style="background:'+colFeed(f.id)+'1e"><span class="dot" style="background:'+colFeed(f.id)+'"></span>'+fmt(t,1)+' kg</span>';
-      });
-      rows+='<div class="lrow" data-lot="'+l.id+'"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="nm">'+esc(lotName(l))+'</span>'+
-        '<span class="vv">'+((l.b||0)>0?l.b+' têtes':'—')+'</span><span class="vv">'+st.P+' pl.</span>'+minis+'</div>';
+
+/* ============ CONTRÔLE ============ */
+function controleHtml(bs){
+  var h=noticeHtml(),act=bs.filter(function(b){return b.b>0&&b.places>0;});
+  var nh=act.filter(function(b){return b.niveau==='hors';}).length,na=act.filter(function(b){return b.niveau==='attention';}).length;
+  if(!act.length)h+='<div class="banniere n-vide">'+ic('info',26)+'<div><b>Aucun lot à contrôler</b><span class="petit">Saisis les effectifs dans Plan et les rations dans Rations.</span></div></div>';
+  else if(nh)h+='<div class="banniere n-hors">'+ic('warn',26)+'<div><b>'+nh+' lot'+(nh>1?'s':'')+' hors norme</b><span class="petit">'+(na?na+' autre'+(na>1?'s':'')+' à surveiller · ':'')+'écart de '+state.tol.orange+' % ou plus avec la ration voulue.</span></div></div>';
+  else if(na)h+='<div class="banniere n-attention">'+ic('warn',26)+'<div><b>'+na+' lot'+(na>1?'s':'')+' à surveiller</b><span class="petit">Écart entre '+state.tol.vert+' et '+state.tol.orange+' % avec la ration voulue.</span></div></div>';
+  else h+='<div class="banniere n-ok">'+ic('check',26)+'<div><b>Tout est dans les normes</b><span class="petit">Chaque lot reçoit sa ration voulue à moins de '+state.tol.vert+' % près.</span></div></div>';
+  bs.forEach(function(b){
+    var l=lotById(b.id);
+    if(!(b.b>0&&b.places>0)){h+='<div class="carte barre ligne"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>';return;}
+    var parts=[];
+    for(var t=0;t<3;t++){var seen={};M.plages(state)[t].forEach(function(r){if(r.b!=null&&r.a!==r.b&&(r.a===l.id||r.b===l.id)){var o=r.a===l.id?r.b:r.a;if(!seen[o]){seen[o]=1;parts.push('tapis '+(t+1)+' avec '+lotShort(lotById(o)));}}});}
+    h+='<div class="carte barre n-'+b.niveau+'-b"><div class="ligne"><span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>'+
+      '<div class="ligne" style="margin:10px 0 4px;align-items:flex-end"><span class="gros num">'+gr(b.recu)+'</span><span class="muet" style="margin-bottom:3px">g/brebis/j reçus</span><span class="sp"></span><span class="muet" style="margin-bottom:3px">voulu <b class="num" style="color:var(--encre)">'+gr(b.voulu)+'</b></span></div>';
+    state.feeds.forEach(function(f){
+      var a=b.aliments[f.id],e=a.voulu>0?(a.recu-a.voulu)/a.voulu*100:null;
+      h+='<div class="ligne petit" style="padding:3px 0"><span class="dot" style="background:'+feedCol(f.id)+';width:11px;height:11px"></span><span class="sp">'+esc(f.name)+'</span><b class="num">'+gr(a.recu)+' g</b><span class="muet num" style="min-width:110px;text-align:right">voulu '+gr(a.voulu)+(e!=null&&Math.abs(e)>=0.5?' · '+pct(e):'')+'</span></div>';
     });
-    el.innerHTML=noticeHtml()+'<div class="ph">Lots — '+state.lots.length+'</div><div class="lotsList">'+rows+'</div>'+
-      '<div class="row big" style="margin-top:2px">'+B+' têtes · '+P+' places · '+fmt(T)+' kg</div>'+
-      '<div class="sep"></div>'+feedsManagerHtml()+
-      '<div class="row" style="gap:8px"><button class="btnsm" id="btnExport">'+ic('dl',13)+' Exporter</button><button class="btnsm" id="btnImport">'+ic('ul',13)+' Importer</button><span class="vv" style="font-size:12.5px;color:var(--muet)">sauvegarde / autre appareil</span><input type="file" id="impFile" accept="application/json,.json" style="display:none"></div>'+
-      '<div class="row" style="gap:8px"><button class="btnsm" id="btnCopies">'+ic('reset',13)+' Copies automatiques</button><span class="vv" style="font-size:12.5px;color:var(--muet)">7 derniers jours, sur ce téléphone</span></div><div id="copiesList"></div>'+
-      '<div class="hint">Touche un morceau d’aire pour l’attribuer à un lot · appui long = nouvelle barrière · glisse une barrière pour la déplacer · touche un aliment pour le renommer.</div>';
-    Array.prototype.forEach.call(el.querySelectorAll('.lrow'),function(r){
-      r.addEventListener('click',function(){notice='';sel={t:'lot',id:+r.getAttribute('data-lot')};setPanelMin(false);renderMap();renderTabs();renderPanel();});
-    });
-    Array.prototype.forEach.call(el.querySelectorAll('[data-renamef]'),function(c){
-      c.addEventListener('click',function(){editFeed=+c.getAttribute('data-renamef');renderPanel();});
-    });
-    Array.prototype.forEach.call(el.querySelectorAll('[data-delf]'),function(c){
-      c.addEventListener('click',function(){
-        var id=+c.getAttribute('data-delf'),key='feed:'+id;
-        if(arm===key){
-          arm=null;
-          M.deleteFeed(state,id);
-          notice='Aliment supprimé.';
-        }else{
-          arm=key;
-          setTimeout(function(){if(arm===key){arm=null;if(!sel&&!showTrie)renderPanel();}},4000);
-        }
-        save();renderPanel();
-      });
-    });
-    var bok=$('btnFeedOk');
-    if(bok)bok.addEventListener('click',function(){
-      var f=null;state.feeds.forEach(function(x){if(x.id===editFeed)f=x;});
-      if(f){f.name=($('editFeedIn').value||'').trim()||f.name;}
-      editFeed=null;save();renderPanel();
-    });
-    var bno=$('btnFeedNo');
-    if(bno)bno.addEventListener('click',function(){editFeed=null;renderPanel();});
-    var baf=$('btnAddFeed');
-    if(baf)baf.addEventListener('click',function(){
-      var n=($('newFeed').value||'').trim();
-      if(!n){notice='Écris d’abord le nom de l’aliment.';renderPanel();return;}
-      state.feeds.push({id:state.nextFeed++,name:n});
-      $('newFeed').value='';
-      save();renderPanel();
-    });
-    var be=$('btnExport');
-    if(be)be.addEventListener('click',exportData);
-    var bi2=$('btnImport');
-    if(bi2)bi2.addEventListener('click',function(){var f=$('impFile');if(f)f.click();});
-    var fi=$('impFile');
-    if(fi)fi.addEventListener('change',function(){doImport(fi.files&&fi.files[0]);fi.value='';});
-    var bc=$('btnCopies');
-    if(bc)bc.addEventListener('click',renderCopies);
-    return;
-  }
-  if(sel.t==='new'){
-    var ctx=(sel.i!=null&&sel.j!=null)?AIRES[sel.i].lab:null;
-    el.innerHTML=noticeHtml()+'<div class="ph">Nouveau lot<button class="closep" id="pClose">'+ic('close',12)+'</button></div>'+
-      '<div class="row"><input id="newLotName" placeholder="Nom du lot (facultatif)" style="flex:1;min-width:130px;text-align:left"><button class="act" id="btnCreateLot">Créer</button></div>'+
-      (ctx?'<div class="vv">Sera attribué au morceau touché ('+esc(ctx)+').</div>':'<div class="hint">Crée le lot, puis touche des morceaux d’aires pour les lui attribuer.</div>');
-    $('pClose').addEventListener('click',function(){sel=null;renderTabs();renderPanel();});
-    $('btnCreateLot').addEventListener('click',function(){createLot($('newLotName').value,sel.i,sel.j);});
-    return;
-  }
-  if(sel.t==='seg'){
-    var i=sel.i,j=sel.j,ks=ksOf(i),k1=ks[j],k2=ks[j+1],lid=state.airs[i].lots[j];
-    var sg=segsOf(i)[j],n=k2-k1;
-    var detail = i===1||i===2 ? n+' col. × 2 côtés = '+sg.pl+' places'
-      : i===0 ? n+' places au tapis 1'
-      : n+' + '+sg.ts+' (TS) = '+sg.pl+' places';
-    el.innerHTML=noticeHtml()+'<div class="ph">'+AIRES[i].lab+' · col. '+k1+' à '+k2+'<button class="closep" id="pClose">'+ic('close',12)+'</button></div>'+
-      '<div class="vv" style="margin:2px 0 8px">Ce morceau : '+detail+' · <button class="act" id="btnCut" style="padding:5px 10px;font-size:13px">+ Barrière au milieu</button></div>'+
-      '<div class="row"><span class="lbl">Lot</span>'+chipsHtml(lid)+'</div><div class="sep"></div>'+lotSection(lid,false);
-    $('pClose').addEventListener('click',function(){sel=null;renderMap();renderTabs();renderPanel();});
-    $('btnCut').addEventListener('click',function(){addBarrier(i,j,Math.round((k1+k2)/2));});
-    bindChips(i,j);
-    bindLot(lid);
-    return;
-  }
-  if(sel.t==='bar'){
-    var bi=sel.i,bp=sel.p,k=state.airs[bi].barriers[bp];
-    var leftL=lotById(state.airs[bi].lots[bp]),rightL=lotById(state.airs[bi].lots[bp+1]);
-    var gL=k-(bp===0?0:state.airs[bi].barriers[bp-1]), gR=(bp===state.airs[bi].barriers.length-1?DBL_PL:state.airs[bi].barriers[bp+1])-k;
-    el.innerHTML=noticeHtml()+'<div class="ph">Barrière — '+AIRES[bi].lab+', colonne '+k+'<button class="closep" id="pClose">'+ic('close',12)+'</button></div>'+
-      '<div class="row"><button class="act" data-a="bm">◀ 1 place</button><button class="act" data-a="bp">1 place ▶</button><button class="warn" data-a="bd">Supprimer</button></div>'+
-      '<div class="vv" style="margin:4px 0">Gauche : '+esc(lotShort(leftL))+' ('+gL+' pl) · Droite : '+esc(lotShort(rightL))+' ('+gR+' pl)</div>'+
-      '<div class="hint">Tu peux aussi la glisser directement dans le dessin. 1 place ≈ 33 cm.</div>';
-    Array.prototype.forEach.call(el.querySelectorAll('[data-a]'),function(bt){
-      bt.addEventListener('click',function(){
-        var a=bt.getAttribute('data-a');
-        if(a==='bm')moveBarrier(bi,bp,k-1);
-        else if(a==='bp')moveBarrier(bi,bp,k+1);
-        else delBarrier(bi,bp);
-      });
-    });
-    $('pClose').addEventListener('click',function(){sel=null;renderMap();renderTabs();renderPanel();});
-    return;
-  }
-  if(!lotById(sel.id)){sel=null;renderTabs();renderPanel();return;}
-  el.innerHTML=noticeHtml()+lotSection(sel.id,true);
-  $('pClose').addEventListener('click',function(){sel=null;renderMap();renderTabs();renderPanel();});
-  bindLot(sel.id);
+    h+='<div class="sep"></div><div class="petit num" style="color:#4a443d">'+fmt(b.kg,1)+' kg sur ses '+b.places+' places ÷ '+b.b+' têtes = <b>'+gr(b.recu)+' g/j</b> '+ic('check',14)+'</div>'+
+      (parts.length?'<div class="muet petit" style="margin-top:4px">Ration commune : '+esc(parts.join(', '))+'</div>':'')+'</div>';
+  });
+  h+='<div class="hint">Vert : écart de moins de '+state.tol.vert+' % · orange : moins de '+state.tol.orange+' % · rouge : au-delà. Seuils modifiables dans Réglages. Les animaux circulent : seule la moyenne du lot compte.</div>';
+  return h;
 }
-/* copies automatiques (IndexedDB) : liste + restauration avec confirmation */
+
+/* ============ RÉGLAGES ============ */
+function reglagesHtml(){
+  var h=noticeHtml()+'<h2>Aliments</h2><div class="carte">';
+  state.feeds.forEach(function(f){
+    if(editFeed===f.id)h+='<div class="ligne" style="padding:5px 0"><span class="dot" style="background:'+feedCol(f.id)+'"></span><input class="champ txt" id="feedIn" value="'+esc(f.name)+'"><button class="ico" data-act="feedOk" data-feed="'+f.id+'" aria-label="Valider">'+ic('check')+'</button></div>';
+    else h+='<div class="ligne" style="padding:5px 0"><span class="dot" style="background:'+feedCol(f.id)+'"></span><span class="sp" style="font-weight:600">'+esc(f.name)+'</span><button class="ico" data-act="feedRen" data-feed="'+f.id+'" aria-label="Renommer">'+ic('pen')+'</button><button class="ico'+(arm==='feed:'+f.id?' danger':'')+'" data-act="feedDel" data-feed="'+f.id+'" aria-label="Supprimer">'+(arm==='feed:'+f.id?'OK ?':ic('trash'))+'</button></div>';
+  });
+  h+='<div class="ligne" style="padding-top:8px"><input class="champ txt" id="newFeed" placeholder="Nouvel aliment"><button class="btn" data-act="feedAdd">'+ic('plus')+' Ajouter</button></div></div>';
+  h+='<h2>Repère du contrôle</h2><div class="carte"><div class="ligne"><span class="badge n-ok">vert</span><span class="sp petit">écart de moins de</span><input class="champ num" id="tolV" data-act="tol" inputmode="numeric" value="'+state.tol.vert+'" style="width:70px"><span>%</span></div>'+
+    '<div class="ligne" style="margin-top:8px"><span class="badge n-attention">orange</span><span class="sp petit">écart de moins de</span><input class="champ num" id="tolO" data-act="tol" inputmode="numeric" value="'+state.tol.orange+'" style="width:70px"><span>%</span></div>'+
+    '<div class="muet petit" style="margin-top:8px">Au-delà : rouge, hors norme. Écart entre la ration reçue et la ration voulue.</div></div>';
+  h+='<h2>Sauvegarde</h2><div class="carte"><div class="ligne" style="gap:8px"><button class="btn" id="btnExport" data-act="export">'+ic('dl')+' Exporter</button><button class="btn" id="btnImport" data-act="import">'+ic('ul')+' Importer</button><input type="file" id="impFile" accept="application/json,.json" style="display:none"></div>'+
+    '<div class="muet petit" style="margin-top:8px">Un fichier à garder, ou pour passer sur un autre téléphone.</div><div class="sep"></div>'+
+    '<button class="btn" id="btnCopies" data-act="copies">'+ic('reset')+' Copies automatiques</button><div class="muet petit" style="margin-top:8px">Une par jour sur 7 jours, et une avant chaque remise à zéro, import ou restauration. Sur ce téléphone uniquement.</div><div id="copiesList"></div></div>';
+  h+='<h2>Tout effacer</h2><div class="carte"><button class="btn'+(arm==='reset'?' danger':'')+'" id="btnReset" data-act="reset">'+ic(arm==='reset'?'warn':'trash')+(arm==='reset'?' Confirmer : tout effacer':' Remettre à zéro')+'</button><div class="muet petit" style="margin-top:8px">Une copie est gardée avant d’effacer.</div></div>';
+  h+='<div class="hint">Ma bergerie v10 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
+  return h;
+}
 function renderCopies(){
   S.vider().then(S.copies).then(function(cs){
     var box=$('copiesList');if(!box)return;
-    if(!cs.length){box.innerHTML='<div class="vv">Aucune copie pour l’instant.</div>';return;}
+    if(!cs.length){box.innerHTML='<div class="muet petit" style="margin-top:8px">Aucune copie pour l’instant.</div>';return;}
     box.innerHTML=cs.map(function(c){
       var k='copie:'+c.cle;
-      return '<div class="trow"><span class="vv" style="flex:1">'+esc(c.libelle)+' · '+c.lots+' lot(s)</span><button class="btnsm'+(arm===k?' danger':'')+'" data-copie="'+esc(c.cle)+'">'+(arm===k?'Confirmer':'Restaurer')+'</button></div>';
+      return '<div class="ligne" style="padding:8px 0;border-top:1px solid var(--doux)"><span class="sp petit">'+esc(c.libelle)+' · '+c.lots+' lot(s)</span><button class="btn mini'+(arm===k?' danger':'')+'" data-act="restaure" data-cle="'+esc(c.cle)+'">'+(arm===k?'Confirmer':'Restaurer')+'</button></div>';
     }).join('');
-    Array.prototype.forEach.call(box.querySelectorAll('[data-copie]'),function(bt){
-      bt.addEventListener('click',function(){
-        var cle=bt.getAttribute('data-copie'),k='copie:'+cle;
-        if(arm!==k){arm=k;renderCopies();setTimeout(function(){if(arm===k){arm=null;renderCopies();}},4000);return;}
-        arm=null;
-        S.lireCopie(cle).then(function(cs2){
-          if(!cs2){notice='Copie illisible.';renderPanel();return;}
-          S.copieAvant(state,'restauration');
-          state=cs2;sel=null;showTrie=false;notice='Copie restaurée : '+state.lots.length+' lot(s).';
-          save();renderMap();renderTabs();renderPanel();
-        });
-      });
-    });
   });
 }
-function bindChips(i,j){
-  Array.prototype.forEach.call($('panel').querySelectorAll('.chip[data-lot]'),function(c){
-    c.addEventListener('click',function(){
-      var v=c.getAttribute('data-lot');
-      notice='';
-      if(v==='new'){sel={t:'new',i:i,j:j};}
-      else state.airs[i].lots[j]=+v;
-      save();renderMap();renderTabs();renderPanel();
-    });
-  });
+
+/* ============ actions ============ */
+function setNotice(m,ko){notice=m||'';noticeKo=!!ko;}
+function armer(k,ms){arm=k;setTimeout(function(){if(arm===k){arm=null;render();}},ms||4000);}
+function createLot(i,j){
+  var id=state.nextLot++;
+  state.lots.push({id:id,b:0,obj:{},name:null});
+  if(i!=null&&j!=null)state.airs[i].lots[j]=id;
+  editName=id;save();goVue('rations');editName=id;render();
+  var n=$('nameIn');if(n)n.focus();
 }
-function bindLot(id){
-  var l=lotById(id),st=lotStats(id);
-  var inB=$('inB');
-  function refresh(kind,fid){
-    state.feeds.forEach(function(f){
-      var r=feedVal(l,f.id);
-      if(!(kind==='fg'&&f.id===fid)&&$('fg_'+f.id))$('fg_'+f.id).value=Math.round(r*1000);
-      if(!(kind==='ft'&&f.id===fid)&&$('ft_'+f.id))$('ft_'+f.id).value=fmt((l.b||0)*r,2);
-      if(!(kind==='pp'&&f.id===fid)&&$('pp_'+f.id))$('pp_'+f.id).value=Math.round(perPlace(l,f.id)*1000);
-      var pp2=perPlace(l,f.id)*1000;
-      if($('fp_'+f.id))$('fp_'+f.id).textContent=pp2>0.5?((ppVal(l,f.id)!=null?'réglée : ':'≈ ')+Math.round(pp2)+' g/place'):'—';
-    });
-    var max=0;state.feeds.forEach(function(f){max=Math.max(max,lotTot(l,f.id),feedVal(l,f.id));});
-    state.feeds.forEach(function(f){
-      var w=max>0?Math.max(2,Math.round(Math.max(lotTot(l,f.id),feedVal(l,f.id))/max*100)):0;
-      if($('fbar_'+f.id))$('fbar_'+f.id).style.width=w+'%';
-    });
-    var tot=(l.b||0)*sumRations(l);
-    if($('totKg'))$('totKg').textContent=fmt(tot)+' kg';
-    if($('totPer'))$('totPer').textContent=l.b>0?'soit ≈ '+Math.round(sumRations(l)*1000)+' g/brebis/j':'saisis les brebis';
-    renderMap();save();
-  }
-  if(inB)inB.addEventListener('input',function(){if(String(inB.value).trim()!=='')setB(l,pnum(inB.value));refresh();});
-  state.feeds.forEach(function(f){
-    var fg=$('fg_'+f.id),ft=$('ft_'+f.id);
-    if(!fg)return;
-    fg.addEventListener('input',function(){setFeedVal(l,f.id,Math.max(0,pnum(fg.value))/1000);refresh('fg',f.id);});
-    ft.addEventListener('input',function(){if(l.b>0)setFeedVal(l,f.id,Math.max(0,pnum(ft.value))/l.b);refresh('ft',f.id);});
-    var pe=$('pp_'+f.id);
-    if(pe)pe.addEventListener('input',function(){setPP(l,f.id,Math.max(0,pnum(pe.value))/1000);refresh('pp',f.id);});
-  });
-  var pk=$('prefKg'),pper=$('prefPer'),pplc=$('prefPlc');
-  if(pk)pk.addEventListener('click',function(){state.pref='kg';save();renderPanel();});
-  if(pper)pper.addEventListener('click',function(){state.pref='per';save();renderPanel();});
-  if(pplc)pplc.addEventListener('click',function(){state.pref='place';save();renderPanel();});
-  Array.prototype.forEach.call($('panel').querySelectorAll('.step'),function(bt){
-    bt.addEventListener('click',function(){inB.value=setB(l,(l.b||0)+parseInt(bt.getAttribute('data-step'),10));refresh();});
-  });
-  var ba=$('btnApplyR');
-  if(ba)ba.addEventListener('click',function(){
-    M.applyToAll(state,l);
-    save();renderPanel();
-  });
-  var br=$('btnRename');
-  if(br)br.addEventListener('click',function(){editName=id;renderPanel();});
-  var bok=$('btnNameOk');
-  if(bok)bok.addEventListener('click',function(){
-    l.name=($('editNameIn').value||'').trim()||null;
-    editName=null;save();renderMap();renderTabs();renderPanel();
-  });
-  var bno=$('btnNameNo');
-  if(bno)bno.addEventListener('click',function(){editName=null;renderPanel();});
-  var bd=$('btnDelLot');
-  if(bd)bd.addEventListener('click',function(){
-    var stt=lotStats(id);
-    if(stt.segs.length){notice='Ce lot a encore '+stt.segs.length+' morceau(x) : attribue-les à un autre lot avant de le supprimer.';renderPanel();return;}
-    if(arm==='lot:'+id){
+document.addEventListener('click',function(e){
+  var b=e.target.closest('[data-act],[data-vue]');if(!b)return;
+  if(b.hasAttribute('data-vue')){goVue(b.getAttribute('data-vue'));return;}
+  var a=b.getAttribute('data-act'),lid=+b.getAttribute('data-lot'),fid=+b.getAttribute('data-feed'),l=lotById(lid);
+  if(b.tagName==='INPUT')return;
+  switch(a){
+    case 'noticeX':setNotice('');break;
+    case 'desel':sel=null;break;
+    case 'assign':
+      if(b.getAttribute('data-lot')==='new'){createLot(sel.i,sel.j);return;}
+      state.airs[sel.i].lots[sel.j]=lid;save();break;
+    case 'cut':{var sg=M.segsOf(state,sel.i)[sel.j];addBarrier(sel.i,sel.j,Math.round((sg.k1+sg.k2)/2));return;}
+    case 'barL':moveBarrier(sel.i,sel.p,state.airs[sel.i].barriers[sel.p]-1);return;
+    case 'barR':moveBarrier(sel.i,sel.p,state.airs[sel.i].barriers[sel.p]+1);return;
+    case 'barDel':delBarrier(sel.i,sel.p);return;
+    case 'b-':case 'b+':M.setEffectif(l,(l.b||0)+(a==='b+'?1:-1));save();break;
+    case 'newLot':createLot();return;
+    case 'pref':state.pref=b.getAttribute('data-v');save();break;
+    case 'rename':editName=lid;render();var n=$('nameIn');if(n){n.focus();n.select();}return;
+    case 'nameOk':l.name=($('nameIn').value||'').trim()||null;editName=null;save();break;
+    case 'delLot':
+      if(lotStats(lid).segs.length){setNotice('Ce lot occupe encore '+lotStats(lid).segs.length+' morceau(x) d’aire : attribue-les à un autre lot dans Plan avant de le supprimer.',true);break;}
+      if(arm==='lot:'+lid){arm=null;state.lots=state.lots.filter(function(x){return x.id!==lid;});if(!state.lots.length)state.lots=[{id:state.nextLot++,b:0,obj:{},name:null}];setNotice('Lot supprimé.');save();}
+      else armer('lot:'+lid);
+      break;
+    case 'copyAll':M.applyToAll(state,l);setNotice('Ration de '+lotName(l)+' copiée sur tous les lots.');save();break;
+    case 'figer':M.figer(state);setNotice('Trémies figées. Bouge tes lots : la ration reçue par brebis se lit dans Contrôle.');save();break;
+    case 'recalc':
+      if(arm==='recalc'){arm=null;S.copieAvant(state,'recalcul-tremies');M.liberer(state);setNotice('Doses recalculées d’après les rations voulues : règle les trémies, puis fige.');save();}
+      else armer('recalc');
+      break;
+    case 'unique':showUnique=!showUnique;break;
+    case 'uniqueX':showUnique=false;break;
+    case 'uniqueOk':
+      state.feeds.forEach(function(fd){var el=$('uni_'+fd.id);if(el&&String(el.value).trim()!=='')M.doseUnique(state,fd.id,pnum(el.value)/1000);});
+      showUnique=false;setNotice('Dose appliquée à toutes les places.');save();break;
+    case 'dose':editDose=b.getAttribute('data-key');render();var di=$('doseIn');if(di){di.focus();di.select();}return;
+    case 'doseOk':validerDose();return;
+    case 'feedRen':editFeed=fid;render();var fi=$('feedIn');if(fi){fi.focus();fi.select();}return;
+    case 'feedOk':{var fo=state.feeds.find(function(x){return x.id===fid;});if(fo)fo.name=($('feedIn').value||'').trim()||fo.name;editFeed=null;save();break;}
+    case 'feedDel':
+      if(arm==='feed:'+fid){arm=null;M.deleteFeed(state,fid);setNotice('Aliment supprimé.');save();}
+      else armer('feed:'+fid);
+      break;
+    case 'feedAdd':{var nn=($('newFeed').value||'').trim();if(!nn){setNotice('Écris d’abord le nom de l’aliment.');break;}M.addFeed(state,nn);save();break;}
+    case 'export':exportData();break;
+    case 'import':$('impFile').click();return;
+    case 'copies':renderCopies();return;
+    case 'restaure':{
+      var cle=b.getAttribute('data-cle'),k='copie:'+cle;
+      if(arm!==k){arm=k;renderCopies();setTimeout(function(){if(arm===k){arm=null;renderCopies();}},4000);return;}
       arm=null;
-      state.lots=state.lots.filter(function(x){return x.id!==id;});
-      if(!state.lots.length)state.lots=[{id:state.nextLot++,b:0,r:{},pp:{}}];
-      sel=null;notice='Lot supprimé.';
-      save();renderMap();renderTabs();renderPanel();
-    }else{
-      arm='lot:'+id;
-      setTimeout(function(){if(arm==='lot:'+id){arm=null;renderPanel();}},4000);
-      renderPanel();
+      S.lireCopie(cle).then(function(c2){
+        if(!c2){setNotice('Copie illisible.',true);render();return;}
+        S.copieAvant(state,'restauration');state=c2;sel=null;setNotice('Copie restaurée : '+state.lots.length+' lot(s).');save();render();
+      });
+      return;
     }
-  });
+    case 'reset':
+      if(arm==='reset'){arm=null;S.copieAvant(state,'remise-a-zero');state=M.defaultState();sel=null;setNotice('Tout est effacé. Une copie a été gardée (Copies automatiques).');save();}
+      else armer('reset');
+      break;
+  }
+  render();
+});
+function validerDose(){
+  var di=$('doseIn');if(!di)return;
+  M.setDosePlage(state,+di.getAttribute('data-t'),+di.getAttribute('data-k1'),+di.getAttribute('data-k2'),+di.getAttribute('data-feed'),pnum(di.value)/1000);
+  editDose=null;save();render();
+}
+document.addEventListener('input',function(e){
+  var el=e.target,a=el.getAttribute('data-act');if(!a)return;
+  var l=lotById(+el.getAttribute('data-lot'));
+  if(a==='eff'){if(String(el.value).trim()==='')return;M.setEffectif(l,pnum(el.value));}
+  else if(a==='ration'){var f=+el.getAttribute('data-feed'),v=pnum(el.value);if(state.pref==='kg')M.setVoulueKg(l,f,v);else M.setVoulue(l,f,v/1000);}
+  else if(a==='tol'){var tv=Math.max(0,Math.round(pnum($('tolV').value))),to=Math.max(0,Math.round(pnum($('tolO').value)));if(tv>0&&to>tv)state.tol={vert:tv,orange:to};else return;}
+  else return;
+  save();render();
+});
+document.addEventListener('keydown',function(e){
+  if(e.key!=='Enter')return;
+  var id=e.target.id;
+  if(id==='nameIn')document.querySelector('[data-act="nameOk"]').click();
+  else if(id==='feedIn')document.querySelector('[data-act="feedOk"]').click();
+  else if(id==='doseIn')validerDose();
+  else if(id==='newFeed')document.querySelector('[data-act="feedAdd"]').click();
+  else if(e.target.tagName==='INPUT')e.target.blur();
+});
+document.addEventListener('change',function(e){
+  if(e.target.id==='impFile'){var fl=e.target.files&&e.target.files[0];e.target.value='';if(fl)doImport(fl);}
+  else if(e.target.getAttribute('data-act')==='eff'&&String(e.target.value).trim()===''){e.target.value=lotById(+e.target.getAttribute('data-lot')).b||0;}
+});
+$('pill').addEventListener('click',function(){goVue('tremies');});
+
+/* ============ fichier ============ */
+function exportData(){
+  try{
+    var data=M.exportJson(state),a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+    a.download='bergerie-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
+    setNotice('Sauvegarde téléchargée : garde-la précieusement.');
+  }catch(e){setNotice('Export impossible sur ce navigateur.',true);}
+}
+function applyImport(text){
+  var r=M.importJson(text);
+  if(r.ok){S.copieAvant(state,'import');state=r.state;sel=null;setNotice(r.msg);save();}
+  else setNotice(r.msg,true);
+  render();
+}
+function doImport(file){
+  try{var rd=new FileReader();rd.onload=function(){applyImport(String(rd.result));};rd.onerror=function(){setNotice('Fichier illisible.',true);render();};rd.readAsText(file);}
+  catch(e){setNotice('Import impossible sur ce navigateur.',true);render();}
 }
 
 /* ============ barrières ============ */
 function insertBarrier(i,k){
   var a=state.airs[i],p=0;
   while(p<a.barriers.length&&a.barriers[p]<k)p++;
-  var lo=p===0?1:a.barriers[p-1]+1, hi=p===a.barriers.length?DBL_PL-1:a.barriers[p]-1;
+  var lo=p===0?1:a.barriers[p-1]+1,hi=p===a.barriers.length?DBL_PL-1:a.barriers[p]-1;
   if(lo>hi)return -1;
   k=Math.max(lo,Math.min(hi,k));
-  a.barriers.splice(p,0,k);
-  a.lots.splice(p+1,0,a.lots[p]);
+  a.barriers.splice(p,0,k);a.lots.splice(p+1,0,a.lots[p]);
   return p;
 }
 function addBarrier(i,j,k){
-  var a=state.airs[i];
-  var lo=j===0?1:a.barriers[j-1]+1, hi=j===a.barriers.length?DBL_PL-1:a.barriers[j]-1;
-  if(lo>hi){notice='Plus de place dans ce morceau.';renderPanel();return;}
+  var a=state.airs[i],lo=j===0?1:a.barriers[j-1]+1,hi=j===a.barriers.length?DBL_PL-1:a.barriers[j]-1;
+  if(lo>hi){setNotice('Plus de place dans ce morceau.');render();return;}
   k=Math.max(lo,Math.min(hi,k));
-  a.barriers.splice(j,0,k);
-  a.lots.splice(j+1,0,a.lots[j]);
-  save();
-  sel={t:'bar',i:i,p:j};
-  renderMap();renderTabs();renderPanel();
+  a.barriers.splice(j,0,k);a.lots.splice(j+1,0,a.lots[j]);
+  sel={t:'bar',i:i,p:j};save();render();
 }
-function moveBarrier(i,p,k){
-  var a=state.airs[i];
-  var lo=p===0?1:a.barriers[p-1]+1, hi=p===a.barriers.length-1?DBL_PL-1:a.barriers[p+1]-1;
-  k=Math.max(lo,Math.min(hi,k));
-  if(k===a.barriers[p])return;
-  a.barriers[p]=k;save();renderMap();renderPanel();
-}
-function moveBarrierLive(i,p,k){
-  var a=state.airs[i];
-  var lo=p===0?1:a.barriers[p-1]+1, hi=p===a.barriers.length-1?DBL_PL-1:a.barriers[p+1]-1;
-  k=Math.max(lo,Math.min(hi,k));
-  if(k===a.barriers[p])return;
-  a.barriers[p]=k;save();
-}
-function delBarrier(i,p){
-  var a=state.airs[i];
-  a.barriers.splice(p,1);
-  a.lots.splice(p,2,a.lots[p]);
-  sel=null;save();renderMap();renderTabs();renderPanel();
-}
+function clampBar(i,p,k){var a=state.airs[i],lo=p===0?1:a.barriers[p-1]+1,hi=p===a.barriers.length-1?DBL_PL-1:a.barriers[p+1]-1;return Math.max(lo,Math.min(hi,k));}
+function moveBarrier(i,p,k){k=clampBar(i,p,k);if(k===state.airs[i].barriers[p])return;state.airs[i].barriers[p]=k;save();render();}
+function moveBarrierLive(i,p,k){k=clampBar(i,p,k);if(k===state.airs[i].barriers[p])return;state.airs[i].barriers[p]=k;save();renderMap();}
+function delBarrier(i,p){var a=state.airs[i];a.barriers.splice(p,1);a.lots.splice(p,2,a.lots[p]);sel=null;save();render();}
 function kFromX(x){return Math.max(1,Math.min(DBL_PL-1,Math.round((x-DBL_X0)/DBL_LEN*DBL_PL)));}
 
-/* ============ interactions carte ============ */
-function toSvg(cx,cy){
-  var r=svg.getBoundingClientRect();
-  return {x:view.x+((cx-r.left)/r.width)*view.w, y:view.y+((cy-r.top)/r.height)*view.h};
-}
+/* ============ gestes sur le plan ============ */
+function toSvg(cx,cy){var r=svg.getBoundingClientRect();return {x:view.x+((cx-r.left)/r.width)*view.w,y:view.y+((cy-r.top)/r.height)*view.h};}
 function aireAt(y){for(var i=0;i<4;i++){if(y>=AIRES[i].y-0.15&&y<=AIRES[i].y+AIRES[i].h+0.15)return i;}return -1;}
 function hitBarrier(p){
   var ai=aireAt(p.y);if(ai<0)return null;
-  var tol=14/svg.getBoundingClientRect().width*view.w,bp=-1,bd=1e9;
-  state.airs[ai].barriers.forEach(function(k,ix){var d=Math.abs(p.x-xOfK(k));if(d<tol&&d<bd){bd=d;bp=ix;}});
+  var tol=16/svg.getBoundingClientRect().width*view.w,bp=-1,bd=1e9;
+  state.airs[ai].barriers.forEach(function(k,ix){var d=Math.abs(p.x-M.xOfK(k));if(d<tol&&d<bd){bd=d;bp=ix;}});
   return bp<0?null:{i:ai,p:bp};
 }
 function segAt(p){
   var ai=aireAt(p.y);
   if(ai<0||p.x<-0.2||p.x>L+0.2)return null;
   if(p.x>DBL_END+0.2)return {i:ai,j:state.airs[ai].lots.length-1};
-  var kF=(p.x-DBL_X0)/DBL_LEN*DBL_PL,ks=ksOf(ai);
+  var kF=(p.x-DBL_X0)/DBL_LEN*DBL_PL,ks=M.ksOf(state,ai);
   for(var j=0;j<ks.length-1;j++)if(kF>=ks[j]-1e-9&&kF<=ks[j+1]+1e-9)return {i:ai,j:j};
   return null;
 }
 var ptrs={},gest={mode:null,bar:null,moved:0,pc:null,pinch:null,timer:null,longOk:false,pDown:null};
 function nPtrs(){return Object.keys(ptrs).length;}
-function pinchInfo(){
-  var a=[];for(var id in ptrs)a.push(ptrs[id]);
-  return {cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y))};
-}
+function pinchInfo(){var a=[];for(var id in ptrs)a.push(ptrs[id]);return {cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y))};}
 function clearTimer(){if(gest.timer){clearTimeout(gest.timer);gest.timer=null;}}
 svg.addEventListener('contextmenu',function(e){e.preventDefault();});
 svg.addEventListener('pointerdown',function(e){
@@ -767,22 +684,17 @@ svg.addEventListener('pointerdown',function(e){
     gest.moved=0;gest.pc={x:e.clientX,y:e.clientY};gest.longOk=false;
     var p=toSvg(e.clientX,e.clientY);gest.pDown=p;
     var bI=hitBarrier(p);
-    if(bI){gest.mode='bar';gest.bar=bI;sel={t:'bar',i:bI.i,p:bI.p};setPanelMin(false);renderMap();renderPanel();}
+    if(bI){gest.mode='bar';gest.bar=bI;sel={t:'bar',i:bI.i,p:bI.p};renderMap();}
     else{
       gest.mode='pan';
       gest.timer=setTimeout(function(){
         if(gest.mode==='pan'&&gest.moved<10&&nPtrs()===1){
           var sg=segAt(gest.pDown);
-          if(sg){
-            var p2=insertBarrier(sg.i,kFromX(gest.pDown.x));
-            if(p2>=0){save();sel={t:'bar',i:sg.i,p:p2};gest.longOk=true;setPanelMin(false);renderMap();renderPanel();}
-          }
+          if(sg){var p2=insertBarrier(sg.i,kFromX(gest.pDown.x));if(p2>=0){save();sel={t:'bar',i:sg.i,p:p2};gest.longOk=true;render();}}
         }
       },600);
     }
-  }else{
-    clearTimer();gest.mode='pinch';gest.bar=null;gest.pinch=pinchInfo();
-  }
+  }else{clearTimer();gest.mode='pinch';gest.bar=null;gest.pinch=pinchInfo();}
 });
 svg.addEventListener('pointermove',function(e){
   if(!(e.pointerId in ptrs))return;
@@ -793,47 +705,31 @@ svg.addEventListener('pointermove',function(e){
     if(gest.pinch){
       zoomAt(gest.pinch.cx,gest.pinch.cy,gest.pinch.d/pi.d);
       var r=svg.getBoundingClientRect();
-      view.x-=(pi.cx-gest.pinch.cx)/r.width*view.w;
-      view.y-=(pi.cy-gest.pinch.cy)/r.height*view.h;
-      clampView();setVB();
+      view.x-=(pi.cx-gest.pinch.cx)/r.width*view.w;view.y-=(pi.cy-gest.pinch.cy)/r.height*view.h;clampView();setVB();
     }
-    gest.pinch=pi;
-    return;
+    gest.pinch=pi;return;
   }
   gest.moved=Math.max(gest.moved,Math.abs(e.clientX-gest.pc.x),Math.abs(e.clientY-gest.pc.y));
   if(gest.moved>=10)clearTimer();
-  if(gest.mode==='bar'&&gest.bar){
-    var p=toSvg(e.clientX,e.clientY);
-    moveBarrierLive(gest.bar.i,gest.bar.p,kFromX(p.x));
-  }else if(gest.mode==='pan'){
-    view.x-=(e.clientX-gest.pc.x)/svg.getBoundingClientRect().width*view.w;
-    view.y-=(e.clientY-gest.pc.y)/svg.getBoundingClientRect().height*view.h;
-    clampView();setVB();
+  if(gest.mode==='bar'&&gest.bar){var p=toSvg(e.clientX,e.clientY);moveBarrierLive(gest.bar.i,gest.bar.p,kFromX(p.x));}
+  else if(gest.mode==='pan'){
+    var rr=svg.getBoundingClientRect();
+    view.x-=(e.clientX-gest.pc.x)/rr.width*view.w;view.y-=(e.clientY-gest.pc.y)/rr.height*view.h;clampView();setVB();
     gest.pc={x:e.clientX,y:e.clientY};
   }
 });
 function endPtr(e){
   if(!(e.pointerId in ptrs))return;
   delete ptrs[e.pointerId];
-  if(nPtrs()===1){
-    clearTimer();
-    for(var id in ptrs){gest.pc={x:ptrs[id].x,y:ptrs[id].y};break;}
-    gest.mode='pan';gest.bar=null;gest.pinch=null;
-    return;
-  }
+  if(nPtrs()===1){clearTimer();for(var id in ptrs){gest.pc={x:ptrs[id].x,y:ptrs[id].y};break;}gest.mode='pan';gest.bar=null;gest.pinch=null;return;}
   if(nPtrs()===0){
     clearTimer();
-    if(gest.mode==='bar'){renderPanel();}
+    if(gest.mode==='bar'){render();}
     else if(gest.mode==='pan'&&!gest.longOk&&gest.moved<10){
       var p=toSvg(e.clientX,e.clientY),bI=hitBarrier(p);
       if(bI)sel={t:'bar',i:bI.i,p:bI.p};
-      else{
-        var sg=segAt(p);
-        sel=sg?{t:'seg',i:sg.i,j:sg.j}:null;
-      }
-      if(sel)setPanelMin(false);
-      notice='';arm=null;
-      renderMap();renderTabs();renderPanel();
+      else{var sg=segAt(p);sel=sg?{t:'seg',i:sg.i,j:sg.j}:null;}
+      arm=null;render();
     }
     gest.mode=null;gest.bar=null;gest.pinch=null;gest.longOk=false;
   }
@@ -841,51 +737,26 @@ function endPtr(e){
 svg.addEventListener('pointerup',endPtr);
 svg.addEventListener('pointercancel',endPtr);
 svg.addEventListener('wheel',function(e){e.preventDefault();zoomAt(e.clientX,e.clientY,e.deltaY>0?1.15:0.87);},{passive:false});
-
-/* ============ boutons ============ */
-$('btnReset').innerHTML=ic('reset',16);
-$('zin').innerHTML=ic('zin',16);
-$('zout').innerHTML=ic('zout',16);
-$('zfit').innerHTML=ic('fit',16);
-$('btnReset').addEventListener('click',function(){
-  var rB=$('btnReset');
-  if(arm==='reset'){
-    arm=null;rB.classList.remove('warn');rB.innerHTML=ic('reset',16);
-    S.copieAvant(state,'remise-a-zero');state=M.defaultState();sel=null;showTrie=false;notice='';
-    save();renderMap();renderTabs();renderPanel();
-    return;
-  }
-  arm='reset';rB.classList.add('warn');rB.innerHTML=ic('warn',16);
-  setTimeout(function(){if(arm==='reset'){arm=null;rB.classList.remove('warn');rB.innerHTML=ic('reset',16);}},4000);
-});
+$('zin').innerHTML=ic('zin',20);$('zout').innerHTML=ic('zout',20);$('zfit').innerHTML=ic('fit',20);
 $('zin').addEventListener('click',function(){var r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,0.8);});
 $('zout').addEventListener('click',function(){var r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1.25);});
 $('zfit').addEventListener('click',fitView);
-$('pcol').addEventListener('click',function(){setPanelMin(!panelMin);});
 var lastAspect=0;
-window.addEventListener('resize',function(){
-  var r=svg.getBoundingClientRect(),a=r.width/Math.max(1,r.height);
-  if(lastAspect&&Math.abs(a/lastAspect-1)>0.25)fitView();
-  lastAspect=a;
-});
+window.addEventListener('resize',function(){var r=svg.getBoundingClientRect(),a=r.width/Math.max(1,r.height);if(lastAspect&&Math.abs(a/lastAspect-1)>0.2)fitView();lastAspect=a;});
 
 /* ============ départ ============ */
 if(boot.state)save();  /* sinon : on attend le secours IndexedDB avant d'écrire quoi que ce soit */
+render();
 fitView();
-renderMap();
-renderTabs();
-setPanelMin((window.innerWidth||920)<920);
-renderPanel();
-/* secours : rien dans localStorage (vidé, abîmé) mais un miroir IndexedDB existe → on le reprend */
 if(!boot.state){
   S.secours().then(function(s2){
-    if(!s2){save();return;}
-    state=s2;sel=null;notice='Données reprises de la copie de secours du téléphone.';
-    save();renderMap();renderTabs();renderPanel();
+    if(s2){state=s2;sel=null;setNotice('Données reprises de la copie de secours du téléphone.');save();render();return;}
+    if(boot.abime){var anc=S.chargerAncien();if(anc.state){state=anc.state;setNotice('Sauvegarde abîmée : données reprises de l’ancienne version. Vérifie l’onglet Trémies.',true);}}
+    save();render();
   });
 }
 S.persister();
-if(typeof navigator!=='undefined'&&navigator.serviceWorker&&typeof location!=='undefined'&&(/^https:$/.test(location.protocol)||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
+if(typeof navigator!=='undefined'&&navigator.serviceWorker&&(/^https:$/.test(location.protocol)||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
   try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}
 }
 </script>
