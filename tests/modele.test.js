@@ -158,6 +158,22 @@ t('contrôle : kg ÷ têtes = ration reçue', () => {
   const s = v6(); M.bilans(s).forEach(b => near(b.kg / b.b, b.recu));
 });
 
+t('la cause est l’aliment qui fait alerter ; option « seul le total compte »', () => {
+  const s = M.versV6(v5());
+  const b = M.bilan(s, s.lots[0]);
+  assert.strictEqual(b.niveau, 'attention'); assert.strictEqual(b.cause.fid, 1); near(b.cause.pct, 7.8, 0.05);
+  s.tol.parAliment = false;
+  assert.strictEqual(M.bilan(s, s.lots[0]).niveau, 'ok'); assert.strictEqual(M.bilan(s, s.lots[0]).cause, null);
+});
+t('marges réglables : 10 / 20 %', () => {
+  const s = M.versV6(v5()); s.tol.vert = 10; s.tol.orange = 20;
+  assert.deepStrictEqual(M.bilans(s).map(b => b.niveau), ['ok', 'attention']);  /* Antenaises : maïs −13,9 % */
+});
+t('anciennes données sans l’option : alerte par aliment active', () => {
+  const s = M.normalize({ v: 6, lots: [], feeds: [], airs: [{}, {}, {}, {}], tol: { vert: 5, orange: 15 } });
+  assert.strictEqual(s.tol.parAliment, true);
+});
+
 console.log('4. Opérations, import / export');
 t('appliquer à tous copie la ration voulue', () => {
   const s = v6(); M.applyToAll(s, s.lots[0]); assert.deepStrictEqual(s.lots[1].obj, s.lots[0].obj);

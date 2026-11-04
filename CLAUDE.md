@@ -36,7 +36,7 @@ Fichiers : `index.html` (~53 Ko, tout-en-un), `README.md`, `manifest.webmanifest
 ## 2 bis. v10 (04/11/2026) — LE MODÈLE ACTUEL (remplace le §4 pour ce qui suit)
 
 Vincent a revu le principe le 04/11/2026 (« rien n'est figé, tu peux tout revoir ») et validé deux points :
-- **Repère** : écart entre la ration reçue et la **ration voulue** du lot (vert < 5 %, orange < 15 %, rouge au-delà ; seuils réglables). Un aliment très à côté suffit à alerter.
+- **Repère** : écart entre la ration reçue et la **ration voulue** du lot (vert < 5 %, orange < 15 %, rouge au-delà). Marges réglables dans Contrôle et Réglages (décimales acceptées, vert < orange). Option « compter chaque aliment » (oui par défaut) : un aliment hors marge suffit à alerter, la cause est affichée.
 - **Physique, trémies figées** : quand une barrière bouge sans toucher aux trémies, **chaque place garde la dose réglée à cet endroit** (la trémie ne sait pas quel lot est devant elle).
 
 Deux sens de travail :
@@ -51,7 +51,7 @@ Fichiers :
 - `stockage.js` : localStorage + miroir IndexedDB + copies (7 jours, avant remise à zéro / import / restauration / recalcul).
 - Interface : 5 onglets en bas (Plan, Rations, Trémies, Contrôle, Réglages), aucun emoji, icônes SVG fines.
 - `sw.js` : cache `bergerie-v10`, scripts `?v=10` (**incrémenter partout à chaque version**). N'efface que les caches `bergerie-vN` (le stockage est partagé avec les autres applis du domaine).
-- Tests : `npm test` → `tests/modele.test.js` (29), `tests/interface.js` (43, Chromium taille téléphone), `tests/stockage-horsligne.js` (17). Tout doit passer avant de publier.
+- Tests : `npm test` → `tests/modele.test.js` (32), `tests/interface.js` (50, Chromium taille téléphone), `tests/stockage-horsligne.js` (17). Tout doit passer avant de publier.
 
 ## 3. Géométrie de la bergerie (validée sur le terrain — ne pas modifier)
 

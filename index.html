@@ -220,10 +220,24 @@ function badge(b){
   var t=NIV[b.niveau]+(b.pct!=null&&b.niveau!=='ok'?' · '+(b.sens==='+'?'trop':'pas assez'):'');
   return '<span class="badge n-'+b.niveau+'">'+(b.niveau==='ok'?ic('check',14):(b.niveau==='hors'?ic('warn',14):''))+(b.pct!=null?pct(b.pct)+' · ':'')+t+'</span>';
 }
+function causeHtml(b){
+  if(!b.cause)return '';
+  var f=state.feeds.find(function(x){return x.id===b.cause.fid;});
+  return '<div class="petit" style="color:var(--'+(b.niveau==='hors'?'hors':'att')+');margin-top:6px;font-weight:600">à cause de : '+esc(f?f.name:'')+' '+pct(b.cause.pct)+'</div>';
+}
+function margesHtml(){
+  var t=state.tol;
+  return '<div class="ligne"><span class="badge n-ok">vert</span><span class="sp petit">écart de moins de</span><input class="champ num" id="tolV" data-act="tol" inputmode="decimal" value="'+String(t.vert).replace('.',',')+'" style="width:76px"><span>%</span></div>'+
+    '<div class="ligne" style="margin-top:8px"><span class="badge n-attention">orange</span><span class="sp petit">écart de moins de</span><input class="champ num" id="tolO" data-act="tol" inputmode="decimal" value="'+String(t.orange).replace('.',',')+'" style="width:76px"><span>%</span></div>'+
+    '<div class="muet petit" style="margin-top:6px">Au-delà : rouge, hors norme.</div>'+
+    '<div class="ligne" style="margin-top:10px"><span class="sp petit">Compter aussi chaque aliment séparément</span><span class="seg"><button data-act="parAli" data-v="1" class="'+(t.parAliment!==false?'on':'')+'">Oui</button><button data-act="parAli" data-v="0" class="'+(t.parAliment===false?'on':'')+'">Non</button></span></div>'+
+    '<div class="muet petit" style="margin-top:4px">Oui : un aliment hors marge suffit à alerter, même si le total tombe juste. Non : seul le total compte.</div>';
+}
 function noticeHtml(){
   return (storageKo?'<div class="note ko">'+ic('warn',18)+'<span>Impossible d’enregistrer sur ce téléphone (navigation privée ?) : tes saisies seraient perdues à la fermeture. Ouvre la page dans un navigateur normal, ou exporte tes données.</span></div>':'')+
     (notice?'<div class="note'+(noticeKo?' ko':'')+'" id="notice">'+ic('info',18)+'<span class="sp">'+esc(notice)+'</span><button class="ico" style="width:32px;height:32px;background:none" data-act="noticeX" aria-label="Fermer">'+ic('close',16)+'</button></div>':'');
 }
+function tf(x){return String(x).replace('.',',');}
 function pire(bs){var o={vide:0,ok:1,attention:2,hors:3},w='vide';bs.forEach(function(b){if(o[b.niveau]>o[w])w=b.niveau;});return w;}
 
 /* ============ rendu général ============ */
@@ -234,6 +248,7 @@ function render(){
   var bs=M.bilans(state);
   renderHeader();renderNav(bs);
   ['plan','rations','tremies','controle','reglages'].forEach(function(v){$('v-'+v).classList.toggle('on',v===vue);});
+  ['rations','tremies','controle','reglages'].forEach(function(v){if(v!==vue)$('v-'+v).innerHTML='';});
   if(vue==='plan'){renderMap(bs);renderPlanBas(bs);}
   else if(vue==='rations')$('v-rations').innerHTML=rationsHtml(bs);
   else if(vue==='tremies')$('v-tremies').innerHTML=tremiesHtml();
@@ -362,7 +377,7 @@ function renderPlanBas(bs){
       '<span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span>'+
       '<div class="info"><div class="nom">'+esc(lotName(l))+'</div><div class="muet petit">'+st.P+' places'+(b.b>0&&st.P>0?' · reçoit <b class="num" style="color:var(--encre)">'+gr(b.recu)+' g/j</b>':'')+'</div></div>'+
       '<div class="pas"><button data-act="b-" data-lot="'+l.id+'" aria-label="Une brebis de moins">−</button><input class="champ num" id="eff_'+l.id+'" data-act="eff" data-lot="'+l.id+'" inputmode="numeric" value="'+(l.b||0)+'" aria-label="Effectif"><button data-act="b+" data-lot="'+l.id+'" aria-label="Une brebis de plus">+</button></div>'+
-      '</div><div class="ligne" style="margin-top:8px">'+badge(b)+'</div></div>';
+      '</div><div class="ligne" style="margin-top:8px">'+badge(b)+'</div>'+causeHtml(b)+'</div>';
   });
   h+='<button class="btn plein" data-act="newLot" style="margin-top:6px">'+ic('plus')+' Nouveau lot</button>';
   h+='<div class="hint">Touche un morceau d’aire pour changer son lot · appui long : nouvelle barrière · glisse une barrière pour la déplacer · deux doigts : zoom.'+(state.fige?' Trémies figées : les doses ne bougent pas, la ration par brebis se recalcule.':'')+'</div>';
@@ -454,16 +469,18 @@ function tremiesHtml(){
 function controleHtml(bs){
   var h=noticeHtml(),act=bs.filter(function(b){return b.b>0&&b.places>0;});
   var nh=act.filter(function(b){return b.niveau==='hors';}).length,na=act.filter(function(b){return b.niveau==='attention';}).length;
+  var marges='<div class="ligne" style="margin:-2px 0 10px"><span class="muet petit sp">Marges : vert sous '+tf(state.tol.vert)+' %, orange sous '+tf(state.tol.orange)+' %</span><button class="btn mini" data-act="versMarges">'+ic('pen',16)+' Régler</button></div>';
   if(!act.length)h+='<div class="banniere n-vide">'+ic('info',26)+'<div><b>Aucun lot à contrôler</b><span class="petit">Saisis les effectifs dans Plan et les rations dans Rations.</span></div></div>';
-  else if(nh)h+='<div class="banniere n-hors">'+ic('warn',26)+'<div><b>'+nh+' lot'+(nh>1?'s':'')+' hors norme</b><span class="petit">'+(na?na+' autre'+(na>1?'s':'')+' à surveiller · ':'')+'écart de '+state.tol.orange+' % ou plus avec la ration voulue.</span></div></div>';
-  else if(na)h+='<div class="banniere n-attention">'+ic('warn',26)+'<div><b>'+na+' lot'+(na>1?'s':'')+' à surveiller</b><span class="petit">Écart entre '+state.tol.vert+' et '+state.tol.orange+' % avec la ration voulue.</span></div></div>';
-  else h+='<div class="banniere n-ok">'+ic('check',26)+'<div><b>Tout est dans les normes</b><span class="petit">Chaque lot reçoit sa ration voulue à moins de '+state.tol.vert+' % près.</span></div></div>';
+  else if(nh)h+='<div class="banniere n-hors">'+ic('warn',26)+'<div><b>'+nh+' lot'+(nh>1?'s':'')+' hors norme</b><span class="petit">'+(na?na+' autre'+(na>1?'s':'')+' à surveiller · ':'')+'écart de '+tf(state.tol.orange)+' % ou plus avec la ration voulue.</span></div></div>';
+  else if(na)h+='<div class="banniere n-attention">'+ic('warn',26)+'<div><b>'+na+' lot'+(na>1?'s':'')+' à surveiller</b><span class="petit">Écart entre '+tf(state.tol.vert)+' et '+tf(state.tol.orange)+' % avec la ration voulue.</span></div></div>';
+  else h+='<div class="banniere n-ok">'+ic('check',26)+'<div><b>Tout est dans les normes</b><span class="petit">Chaque lot reçoit sa ration voulue à moins de '+tf(state.tol.vert)+' % près.</span></div></div>';
+  if(act.length)h+=marges;
   bs.forEach(function(b){
     var l=lotById(b.id);
     if(!(b.b>0&&b.places>0)){h+='<div class="carte barre ligne"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>';return;}
     var parts=[];
     for(var t=0;t<3;t++){var seen={};M.plages(state)[t].forEach(function(r){if(r.b!=null&&r.a!==r.b&&(r.a===l.id||r.b===l.id)){var o=r.a===l.id?r.b:r.a;if(!seen[o]){seen[o]=1;parts.push('tapis '+(t+1)+' avec '+lotShort(lotById(o)));}}});}
-    h+='<div class="carte barre n-'+b.niveau+'-b"><div class="ligne"><span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>'+
+    h+='<div class="carte barre n-'+b.niveau+'-b"><div class="ligne"><span class="dot" style="background:'+lotCol(l.id)+';width:18px;height:18px"></span><span class="nom sp">'+esc(lotName(l))+'</span>'+badge(b)+'</div>'+causeHtml(b)+
       '<div class="ligne" style="margin:10px 0 4px;align-items:flex-end"><span class="gros num">'+gr(b.recu)+'</span><span class="muet" style="margin-bottom:3px">g/brebis/j reçus</span><span class="sp"></span><span class="muet" style="margin-bottom:3px">voulu <b class="num" style="color:var(--encre)">'+gr(b.voulu)+'</b></span></div>';
     state.feeds.forEach(function(f){
       var a=b.aliments[f.id],e=a.voulu>0?(a.recu-a.voulu)/a.voulu*100:null;
@@ -472,7 +489,8 @@ function controleHtml(bs){
     h+='<div class="sep"></div><div class="petit num" style="color:#4a443d">'+fmt(b.kg,1)+' kg sur ses '+b.places+' places ÷ '+b.b+' têtes = <b>'+gr(b.recu)+' g/j</b> '+ic('check',14)+'</div>'+
       (parts.length?'<div class="muet petit" style="margin-top:4px">Ration commune : '+esc(parts.join(', '))+'</div>':'')+'</div>';
   });
-  h+='<div class="hint">Vert : écart de moins de '+state.tol.vert+' % · orange : moins de '+state.tol.orange+' % · rouge : au-delà. Seuils modifiables dans Réglages. Les animaux circulent : seule la moyenne du lot compte.</div>';
+  h+='<h2>Marges d’erreur</h2><div class="carte">'+margesHtml()+'</div>';
+  h+='<div class="hint">Écart entre la ration reçue et la ration voulue. Les animaux circulent : seule la moyenne du lot compte.</div>';
   return h;
 }
 
@@ -484,9 +502,7 @@ function reglagesHtml(){
     else h+='<div class="ligne" style="padding:5px 0"><span class="dot" style="background:'+feedCol(f.id)+'"></span><span class="sp" style="font-weight:600">'+esc(f.name)+'</span><button class="ico" data-act="feedRen" data-feed="'+f.id+'" aria-label="Renommer">'+ic('pen')+'</button><button class="ico'+(arm==='feed:'+f.id?' danger':'')+'" data-act="feedDel" data-feed="'+f.id+'" aria-label="Supprimer">'+(arm==='feed:'+f.id?'OK ?':ic('trash'))+'</button></div>';
   });
   h+='<div class="ligne" style="padding-top:8px"><input class="champ txt" id="newFeed" placeholder="Nouvel aliment"><button class="btn" data-act="feedAdd">'+ic('plus')+' Ajouter</button></div></div>';
-  h+='<h2>Repère du contrôle</h2><div class="carte"><div class="ligne"><span class="badge n-ok">vert</span><span class="sp petit">écart de moins de</span><input class="champ num" id="tolV" data-act="tol" inputmode="numeric" value="'+state.tol.vert+'" style="width:70px"><span>%</span></div>'+
-    '<div class="ligne" style="margin-top:8px"><span class="badge n-attention">orange</span><span class="sp petit">écart de moins de</span><input class="champ num" id="tolO" data-act="tol" inputmode="numeric" value="'+state.tol.orange+'" style="width:70px"><span>%</span></div>'+
-    '<div class="muet petit" style="margin-top:8px">Au-delà : rouge, hors norme. Écart entre la ration reçue et la ration voulue.</div></div>';
+  h+='<h2>Marges d’erreur du contrôle</h2><div class="carte">'+margesHtml()+'</div>';
   h+='<h2>Sauvegarde</h2><div class="carte"><div class="ligne" style="gap:8px"><button class="btn" id="btnExport" data-act="export">'+ic('dl')+' Exporter</button><button class="btn" id="btnImport" data-act="import">'+ic('ul')+' Importer</button><input type="file" id="impFile" accept="application/json,.json" style="display:none"></div>'+
     '<div class="muet petit" style="margin-top:8px">Un fichier à garder, ou pour passer sur un autre téléphone.</div><div class="sep"></div>'+
     '<button class="btn" id="btnCopies" data-act="copies">'+ic('reset')+' Copies automatiques</button><div class="muet petit" style="margin-top:8px">Une par jour sur 7 jours, et une avant chaque remise à zéro, import ou restauration. Sur ce téléphone uniquement.</div><div id="copiesList"></div></div>';
@@ -533,6 +549,8 @@ document.addEventListener('click',function(e){
     case 'b-':case 'b+':M.setEffectif(l,(l.b||0)+(a==='b+'?1:-1));save();break;
     case 'newLot':createLot();return;
     case 'pref':state.pref=b.getAttribute('data-v');save();break;
+    case 'parAli':state.tol.parAliment=b.getAttribute('data-v')==='1';save();break;
+    case 'versMarges':{render();var tv=$('tolV');if(tv){tv.scrollIntoView({block:'center'});tv.focus();tv.select();}return;}
     case 'rename':editName=lid;render();var n=$('nameIn');if(n){n.focus();n.select();}return;
     case 'nameOk':l.name=($('nameIn').value||'').trim()||null;editName=null;save();break;
     case 'delLot':
@@ -590,7 +608,11 @@ document.addEventListener('input',function(e){
   var l=lotById(+el.getAttribute('data-lot'));
   if(a==='eff'){if(String(el.value).trim()==='')return;M.setEffectif(l,pnum(el.value));}
   else if(a==='ration'){var f=+el.getAttribute('data-feed'),v=pnum(el.value);if(state.pref==='kg')M.setVoulueKg(l,f,v);else M.setVoulue(l,f,v/1000);}
-  else if(a==='tol'){var tv=Math.max(0,Math.round(pnum($('tolV').value))),to=Math.max(0,Math.round(pnum($('tolO').value)));if(tv>0&&to>tv)state.tol={vert:tv,orange:to};else return;}
+  else if(a==='tol'){
+    var tv=Math.round(pnum($('tolV').value)*10)/10,to=Math.round(pnum($('tolO').value)*10)/10;
+    if(!(tv>0&&to>tv&&to<=100))return;  /* attendre une saisie cohérente (vert < orange) */
+    state.tol.vert=tv;state.tol.orange=to;
+  }
   else return;
   save();render();
 });

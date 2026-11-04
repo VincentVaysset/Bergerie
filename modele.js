@@ -174,13 +174,16 @@
       var a = Math.abs(pct);
       niv = a < tol.vert ? 'ok' : (a < tol.orange ? 'attention' : 'hors');
     }
-    /* un aliment très à côté suffit à alerter, même si le total tombe juste */
-    if (niv === 'ok' || niv === 'attention') s.feeds.forEach(function (f) {
+    /* option (par défaut oui) : un aliment très à côté suffit à alerter, même si le total tombe juste.
+       cause = l'aliment qui fait monter l'alerte au-dessus de ce que donne le total. */
+    var ordre = { vide: 0, ok: 1, attention: 2, hors: 3 }, cause = null;
+    if (tol.parAliment !== false && (niv === 'ok' || niv === 'attention')) s.feeds.forEach(function (f) {
       var pa = parAliment[f.id]; if (!(pa.voulu > 0)) return;
-      var e = Math.abs((pa.recu - pa.voulu) / pa.voulu * 100);
-      if (e >= tol.orange) niv = 'hors'; else if (e >= tol.vert && niv === 'ok') niv = 'attention';
+      var e = (pa.recu - pa.voulu) / pa.voulu * 100, a = Math.abs(e);
+      var n = a >= tol.orange ? 'hors' : (a >= tol.vert ? 'attention' : 'ok');
+      if (ordre[n] > ordre[niv] || (cause && n === niv && a > Math.abs(cause.pct))) { niv = n; cause = { fid: f.id, pct: e }; }
     });
-    return { id: l.id, b: l.b || 0, places: x.places, kg: kg, recu: rec, voulu: vou, pct: pct, niveau: niv,
+    return { id: l.id, b: l.b || 0, places: x.places, kg: kg, recu: rec, voulu: vou, pct: pct, niveau: niv, cause: cause,
       sens: pct == null ? '' : (pct > 0 ? '+' : (pct < 0 ? '-' : '')), aliments: parAliment };
   }
   function bilans(s) { var rc = recu(s); return s.lots.map(function (l) { return bilan(s, l, rc); }); }
@@ -223,7 +226,7 @@
     return id;
   }
   function defaultState() {
-    return { v: 6, nextLot: 1, nextFeed: 1, pref: 'per', tol: { vert: 5, orange: 15 }, fige: null,
+    return { v: 6, nextLot: 1, nextFeed: 1, pref: 'per', tol: { vert: 5, orange: 15, parAliment: true }, fige: null,
       feeds: [{ id: 0, name: 'Aliment' }],
       lots: [{ id: 0, b: 0, obj: {}, name: null }],
       airs: [0, 1, 2, 3].map(function () { return { barriers: [], lots: [0] }; }) };
@@ -319,7 +322,7 @@
       var obj = {}; s.feeds.forEach(function (f) { obj[f.id] = v8.feedVal(s, l, f.id); });
       return { id: l.id, name: l.name == null ? null : l.name, b: l.b, obj: obj };
     });
-    var n = { v: 6, nextLot: s.nextLot, nextFeed: s.nextFeed, pref: s.pref === 'kg' ? 'kg' : 'per', tol: { vert: 5, orange: 15 },
+    var n = { v: 6, nextLot: s.nextLot, nextFeed: s.nextFeed, pref: s.pref === 'kg' ? 'kg' : 'per', tol: { vert: 5, orange: 15, parAliment: true },
       feeds: s.feeds, lots: lots, airs: s.airs,
       fige: { date: (date || new Date()).toISOString(), tapis: tapis, repris: true } };
     return normalize(n);
@@ -337,6 +340,7 @@
     s.nextFeed = Math.max(s.nextFeed || 0, mF);
     s.pref = s.pref === 'kg' ? 'kg' : 'per';
     s.tol = s.tol || { vert: 5, orange: 15 };
+    if (s.tol.parAliment === undefined) s.tol.parAliment = true;
     if (s.fige === undefined) s.fige = null;
     return s;
   }
