@@ -54,7 +54,7 @@ t('ration voulue = ration de l’ancienne appli ; trémies figées sur ses doses
   assert.strictEqual(g(M.voulueTot(s, s.lots[0])), 1810); assert.strictEqual(g(M.voulueTot(s, s.lots[1])), 1600);
   for (let tp = 0; tp < 4; tp++) {
     const anc = tp < 3 ? M.v8.dblRanges(o, tp) : M.v8.tsRanges(o);
-    anc.forEach(r => { for (let k = r.k1; k < r.k2; k++) M.NB_POS[tp] && Object.keys(r.doses).forEach(f => near(M.doseAt(s.fige.tapis[tp], k)[f], r.doses[f])); });
+    anc.forEach(r => { for (let k = r.k1; k < r.k2; k++) Object.keys(r.doses).forEach(f => near(M.doseAt(s.fige.tapis[tp], k)[f], r.doses[f])); });
   }
   assert.deepStrictEqual(s.airs, o.airs); assert.deepStrictEqual(s.feeds, o.feeds);
   assert.deepStrictEqual(s.lots.map(l => [l.id, l.name, l.b]), o.lots.map(l => [l.id, l.name, l.b]));
@@ -172,6 +172,117 @@ t('marges réglables : 10 / 20 %', () => {
 t('anciennes données sans l’option : alerte par aliment active', () => {
   const s = M.normalize({ v: 6, lots: [], feeds: [], airs: [{}, {}, {}, {}], tol: { vert: 5, orange: 15 } });
   assert.strictEqual(s.tol.parAliment, true);
+});
+
+console.log('Pesée de réglage');
+t('410 g/j par position, 2 repas, 10 positions → 2,05 kg ; 102,5 g par place et par repas', () => {
+  const s = v6();
+  near(M.pesee(s, 0.41), 2.05); near(M.parPlaceRepas(s, 0, 0.41), 0.1025); near(M.depuisPesee(s, 2.05), 0.41);
+  near(M.parPlaceRepas(s, 3, 0.41), 0.205);   /* tapis simple : une seule rangée */
+  s.distrib = { repas: 3, pesee: 5 }; near(M.pesee(s, 0.6), 1); near(M.depuisPesee(s, 1), 0.6);
+});
+t('anciennes données : 2 repas et pesée sur 10 positions par défaut', () => {
+  const s = M.versV6(v5()); assert.deepStrictEqual(s.distrib, { repas: 2, pesee: 10 });
+});
+
+console.log('Plan paramétrable');
+/* bergerie « du pote » : tapis simple en haut (mange depuis l'aire du dessous), 5 aires de longueurs différentes,
+   4 tapis doubles dont un décalé, 3 places/m */
+function geoPote() {
+  return { plm: 3, bandes: [
+    { id: 's0', type: 'simple', nom: 'Tapis haut', c0: 0, len: 90, h: 0.7, cote: 'bas' },
+    { id: 'A', type: 'aire', nom: 'Aire A', c0: 0, len: 120, h: 4 },
+    { id: 'd1', type: 'double', nom: 'Double 1', c0: 0, len: 100, h: 0.7 },
+    { id: 'B', type: 'aire', nom: 'Aire B', c0: 0, len: 120, h: 4 },
+    { id: 'd2', type: 'double', nom: 'Double 2', c0: 0, len: 90, h: 0.7 },
+    { id: 'C', type: 'aire', nom: 'Aire C', c0: 0, len: 90, h: 4 },
+    { id: 'd3', type: 'double', nom: 'Double 3', c0: 15, len: 60, h: 0.7 },
+    { id: 'D', type: 'aire', nom: 'Aire D', c0: 9, len: 75, h: 4 },
+    { id: 'd4', type: 'double', nom: 'Double 4', c0: 9, len: 75, h: 0.7 },
+    { id: 'E', type: 'aire', nom: 'Aire E', c0: 9, len: 75, h: 4 }
+  ] };
+}
+function etatPote() {
+  const s = M.defaultState(); M.setGeo(s, geoPote());
+  s.feeds = [{ id: 0, name: 'Céréales' }]; s.nextFeed = 1;
+  s.lots = [{ id: 0, b: 300, name: 'Laitières', obj: { 0: 0.8 } }, { id: 1, b: 60, name: 'Agnelles', obj: { 0: 0.6 } }]; s.nextLot = 2;
+  s.airs.forEach(a => { a.lots = [0]; });
+  s.airs[4] = { barriers: [40], lots: [1, 0] };   /* aire E : Agnelles à gauche (col 9 à 40) */
+  return s;
+}
+t('ta bergerie par défaut : aucune erreur de plan, 654 places, 35 × 22 m', () => {
+  const g = M.geoInfo(M.geoDefaut());
+  assert.deepStrictEqual(M.verifGeo(M.geoDefaut()), []); near(g.L, 35); near(g.W, 22);
+  assert.strictEqual(g.tapis.length, 4); assert.strictEqual(g.aires.length, 4);
+});
+t('plan du pote : places comptées tapis par tapis', () => {
+  const s = etatPote();
+  assert.deepStrictEqual(M.verifGeo(s.geo), []);
+  /* Laitières : 90 (haut) + 2×100 + 2×90 + 2×60 + 75 (d4 côté D) + d4 côté E de 40 à 84 = 44 */
+  assert.strictEqual(M.lotStats(s, 0).P, 90 + 200 + 180 + 120 + 75 + 44);
+  assert.strictEqual(M.lotStats(s, 1).P, 31);
+  const r = M.recu(s); assert.strictEqual(r[0].places, 709); assert.strictEqual(r[1].places, 31);
+});
+t('plan du pote : tout est versé et mangé, lot seul = ration voulue exacte', () => {
+  const s = etatPote(); let v = 0;
+  M.plan(s).forEach(pt => pt.forEach(r => v += r.d[0] * (r.k2 - r.k1)));
+  const r = M.recu(s); near(r[0].kg[0] + r[1].kg[0], v); near(v, 300 * 0.8 + 60 * 0.6);
+  /* Agnelles face aux Laitières sur le double 4 : chaque place reçoit la moyenne des 2 parts */
+  const pA = 60 * 0.6 / 31, pL = 300 * 0.8 / 709;
+  near(M.bilan(s, s.lots[1]).recu, (pA + pL) / 2 * 31 / 60, 1e-9);
+});
+t('plan du pote : tapis décalé, plage partagée, position hors aire', () => {
+  const s = etatPote();
+  const pl = M.plages(s); assert.strictEqual(pl.length, 5);
+  assert.deepStrictEqual(pl[3].map(r => [r.k1, r.k2]), [[0, 60]]);            /* double 3 : 60 places, commence à 5 m */
+  assert.strictEqual(M.lotAt(s, 3, 5), null);                                   /* aire D commence à la colonne 9 */
+  assert.deepStrictEqual(pl[4].map(r => [r.k1, r.k2, r.a, r.b]), [[0, 31, 0, 1], [31, 75, 0, 0]]);
+});
+t('plan du pote : figer puis bouger la barrière, chaque place garde sa dose', () => {
+  const s = etatPote(); M.figer(s); let v = 0;
+  M.plan(s).forEach(pt => pt.forEach(r => v += r.d[0] * (r.k2 - r.k1)));
+  const pA = 60 * 0.6 / 31, pL = 300 * 0.8 / 709;
+  s.airs[4].barriers[0] = 60; const r = M.recu(s); near(r[0].kg[0] + r[1].kg[0], v);
+  /* Agnelles : 31 places à la dose partagée + 20 places gagnées à la dose « Laitières des 2 côtés » */
+  near(M.bilan(s, s.lots[1]).kg, 31 * (pA + pL) / 2 + 20 * pL, 1e-9);
+});
+t('vérification du plan : erreurs claires', () => {
+  const g = geoPote(); g.bandes.splice(1, 1);   /* plus d'aire au-dessus du double 1 */
+  assert.ok(M.verifGeo(g).some(e => /entre deux aires/.test(e)));
+  const g2 = geoPote(); g2.bandes[6].len = 90; assert.ok(M.verifGeo(g2).some(e => /dépasse de Aire D/.test(e)));
+  const g3 = geoPote(); g3.bandes[0].cote = 'haut'; assert.ok(M.verifGeo(g3).some(e => /toucher une aire/.test(e)));
+  assert.ok(M.verifGeo({ plm: 3, bandes: [] }).length >= 2);
+});
+t('changer le plan : aires repérées par leur nom interne, barrières hors aire retirées, trémies à régler', () => {
+  const s = v6(); M.figer(s);
+  const g = M.geoDefaut(); g.bandes.splice(0, 2);        /* on retire l'aire 1 et le tapis 1 */
+  g.bandes[0].len = 60;                                   /* aire 2 raccourcie à 20 m : trop court pour son tapis */
+  assert.ok(M.setGeo(s, g).length > 0, 'refusé : tapis 2 dépasse');
+  g.bandes[0].len = 105;
+  const g4 = JSON.parse(JSON.stringify(g)); g4.bandes[4].len = 60;   /* aire 4 raccourcie à 20 m */
+  g4.bandes[5].len = 60; g4.bandes[3].len = 60;                       /* tapis simple et tapis 3 aussi */
+  assert.deepStrictEqual(M.setGeo(s, g4), []);
+  assert.strictEqual(s.airs.length, 3); assert.strictEqual(s.fige, null);
+  assert.deepStrictEqual(s.airs[2], { barriers: [], lots: [1] });   /* barrière 65 hors de l'aire : retirée ; il reste la partie gauche, aux Antenaises */
+});
+t('changer les places par mètre : barrières au même endroit en mètres', () => {
+  const s = v6(), g = M.geoDefaut(); g.plm = 2;
+  g.bandes.forEach(b => { if (b.len != null) { b.len = Math.round(b.len * 2 / 3); b.c0 = Math.round(b.c0 * 2 / 3); } });
+  assert.deepStrictEqual(M.setGeo(s, g), []);
+  assert.deepStrictEqual(s.airs[3].barriers, [43]);   /* 65 / 3 m = 21,67 m → 43 places à 2 par mètre */
+});
+t('emprise du bâtiment : rectangle chez toi, deux longueurs pour deux bergeries accolées', () => {
+  assert.ok(M.geoInfo(M.geoDefaut()).emprise.every(e => e[0] === 0 && Math.abs(e[1] - 35) < 1e-9));
+  const g = { plm: 3, bandes: [
+    { id: 'a', type: 'aire', nom: 'A', c0: 0, len: 120, h: 4 }, { id: 't', type: 'double', nom: 'T', c0: 0, len: 110, h: 0.7 },
+    { id: 'b', type: 'aire', nom: 'B', c0: 0, len: 120, h: 4 }, { id: 'u', type: 'double', nom: 'U', c0: 15, len: 80, h: 0.7 },
+    { id: 'c', type: 'aire', nom: 'C', c0: 15, len: 90, h: 4 }, { id: 'k', type: 'couloir', nom: 'Couloir', h: 2 } ] };
+  const e = M.geoInfo(g).emprise;
+  assert.deepStrictEqual(e.map(x => x.map(v => Math.round(v * 100) / 100)), [[0, 40], [0, 40], [0, 40], [0, 40], [5, 35], [5, 35]]);
+  g.bandes[5].c0 = 0; g.bandes[5].len = 120; assert.deepStrictEqual(M.geoInfo(g).emprise[5], [0, 40]);
+});
+t('import d’un plan invalide refusé', () => {
+  const s = etatPote(); s.airs.pop(); assert.strictEqual(M.importJson(JSON.stringify(s)).ok, false);
 });
 
 console.log('4. Opérations, import / export');
