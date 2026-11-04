@@ -62,7 +62,21 @@
     });
     var L = 0;
     geo.bandes.forEach(function (b) { if (b.len != null) L = Math.max(L, (b.c0 + b.len) / geo.plm); });
-    var v = { plm: geo.plm, aires: aires, tapis: tapis, W: y, L: L };
+    /* emprise du bâtiment, bande par bande (en mètres) : une aire = sa longueur ; un tapis = les aires qu'il dessert ;
+       un couloir = sa longueur si elle est donnée, sinon celle des bandes voisines. Sert à dessiner les murs. */
+    var ext = geo.bandes.map(function (b) { return b.type === 'aire' || (b.type === 'couloir' && b.len != null) ? [b.c0 / geo.plm, (b.c0 + b.len) / geo.plm] : null; });
+    tapis.forEach(function (tp) {
+      var e = null;
+      [tp.A, tp.B].concat(tp.double ? [] : [null]).forEach(function (ai) { if (ai == null) return; var x = ext[aires[ai].ix]; e = e ? [Math.min(e[0], x[0]), Math.max(e[1], x[1])] : x.slice(); });
+      ext[tp.ix] = e || [tp.c0 / geo.plm, (tp.c0 + tp.len) / geo.plm];
+    });
+    geo.bandes.forEach(function (b, ix) {
+      if (ext[ix]) return;
+      var e = null;
+      [ix - 1, ix + 1].forEach(function (j) { var x = ext[j]; if (x) e = e ? [Math.min(e[0], x[0]), Math.max(e[1], x[1])] : x.slice(); });
+      ext[ix] = e || [0, L];
+    });
+    var v = { plm: geo.plm, aires: aires, tapis: tapis, W: y, L: L, emprise: ext };
     cacheG = { k: k, v: v };
     return v;
   }

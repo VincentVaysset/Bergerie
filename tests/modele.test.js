@@ -271,6 +271,16 @@ t('changer les places par mètre : barrières au même endroit en mètres', () =
   assert.deepStrictEqual(M.setGeo(s, g), []);
   assert.deepStrictEqual(s.airs[3].barriers, [43]);   /* 65 / 3 m = 21,67 m → 43 places à 2 par mètre */
 });
+t('emprise du bâtiment : rectangle chez toi, deux longueurs pour deux bergeries accolées', () => {
+  assert.ok(M.geoInfo(M.geoDefaut()).emprise.every(e => e[0] === 0 && Math.abs(e[1] - 35) < 1e-9));
+  const g = { plm: 3, bandes: [
+    { id: 'a', type: 'aire', nom: 'A', c0: 0, len: 120, h: 4 }, { id: 't', type: 'double', nom: 'T', c0: 0, len: 110, h: 0.7 },
+    { id: 'b', type: 'aire', nom: 'B', c0: 0, len: 120, h: 4 }, { id: 'u', type: 'double', nom: 'U', c0: 15, len: 80, h: 0.7 },
+    { id: 'c', type: 'aire', nom: 'C', c0: 15, len: 90, h: 4 }, { id: 'k', type: 'couloir', nom: 'Couloir', h: 2 } ] };
+  const e = M.geoInfo(g).emprise;
+  assert.deepStrictEqual(e.map(x => x.map(v => Math.round(v * 100) / 100)), [[0, 40], [0, 40], [0, 40], [0, 40], [5, 35], [5, 35]]);
+  g.bandes[5].c0 = 0; g.bandes[5].len = 120; assert.deepStrictEqual(M.geoInfo(g).emprise[5], [0, 40]);
+});
 t('import d’un plan invalide refusé', () => {
   const s = etatPote(); s.airs.pop(); assert.strictEqual(M.importJson(JSON.stringify(s)).ok, false);
 });
