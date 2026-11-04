@@ -174,6 +174,17 @@ t('anciennes données sans l’option : alerte par aliment active', () => {
   assert.strictEqual(s.tol.parAliment, true);
 });
 
+console.log('Pesée de réglage');
+t('410 g/j par position, 2 repas, 10 positions → 2,05 kg ; 102,5 g par place et par repas', () => {
+  const s = v6();
+  near(M.pesee(s, 0.41), 2.05); near(M.parPlaceRepas(s, 0, 0.41), 0.1025); near(M.depuisPesee(s, 2.05), 0.41);
+  near(M.parPlaceRepas(s, 3, 0.41), 0.205);   /* tapis simple : une seule rangée */
+  s.distrib = { repas: 3, pesee: 5 }; near(M.pesee(s, 0.6), 1); near(M.depuisPesee(s, 1), 0.6);
+});
+t('anciennes données : 2 repas et pesée sur 10 positions par défaut', () => {
+  const s = M.versV6(v5()); assert.deepStrictEqual(s.distrib, { repas: 2, pesee: 10 });
+});
+
 console.log('4. Opérations, import / export');
 t('appliquer à tous copie la ration voulue', () => {
   const s = v6(); M.applyToAll(s, s.lots[0]); assert.deepStrictEqual(s.lots[1].obj, s.lots[0].obj);

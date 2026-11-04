@@ -1,8 +1,8 @@
 /* Ma bergerie — hors ligne.
    Page : réseau d'abord, mais repli sur le cache au bout de 3 s (réseau faible à la bergerie).
    Fichiers : cache d'abord. Les scripts sont versionnés (?v=N) : page et scripts restent cohérents. */
-const CACHE = 'bergerie-v10';
-const FICHIERS = ['./', './index.html', './modele.js?v=10', './stockage.js?v=10', './manifest.webmanifest', './icon.svg'];
+const CACHE = 'bergerie-v11';
+const FICHIERS = ['./', './index.html', './modele.js?v=11', './stockage.js?v=11', './manifest.webmanifest', './icon.svg'];
 const DELAI_RESEAU = 3000;
 
 self.addEventListener('install', function (e) {

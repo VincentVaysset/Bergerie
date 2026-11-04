@@ -188,6 +188,16 @@
   }
   function bilans(s) { var rc = recu(s); return s.lots.map(function (l) { return bilan(s, l, rc); }); }
 
+  /* ---- distribution : repas par jour et pesée de réglage ----
+     d = dose du jour par position (tapis double : pour les 2 rangées ; tapis simple : pour la place).
+     Pesée : ce qui tombe sur N positions en UN repas = N × d / repas (Vincent pèse sur 10 positions).
+     Par place et par repas : tapis double d / 2 / repas, tapis simple d / repas. */
+  function repas(s) { return (s.distrib && s.distrib.repas > 0) ? s.distrib.repas : 2; }
+  function nPesee(s) { return (s.distrib && s.distrib.pesee > 0) ? s.distrib.pesee : 10; }
+  function pesee(s, d) { return nPesee(s) * d / repas(s); }
+  function depuisPesee(s, kg) { return kg * repas(s) / nPesee(s); }
+  function parPlaceRepas(s, t, d) { return d / (t < 3 ? 2 : 1) / repas(s); }
+
   /* ---- opérations ---- */
   function setEffectif(l, nb) { l.b = Math.max(0, Math.round(nb) || 0); return l.b; }
   function setVoulue(l, fid, kg) { l.obj = l.obj || {}; l.obj[fid] = Math.max(0, kg || 0); }
@@ -226,7 +236,7 @@
     return id;
   }
   function defaultState() {
-    return { v: 6, nextLot: 1, nextFeed: 1, pref: 'per', tol: { vert: 5, orange: 15, parAliment: true }, fige: null,
+    return { v: 6, nextLot: 1, nextFeed: 1, pref: 'per', tol: { vert: 5, orange: 15, parAliment: true }, distrib: { repas: 2, pesee: 10 }, fige: null,
       feeds: [{ id: 0, name: 'Aliment' }],
       lots: [{ id: 0, b: 0, obj: {}, name: null }],
       airs: [0, 1, 2, 3].map(function () { return { barriers: [], lots: [0] }; }) };
@@ -341,6 +351,7 @@
     s.pref = s.pref === 'kg' ? 'kg' : 'per';
     s.tol = s.tol || { vert: 5, orange: 15 };
     if (s.tol.parAliment === undefined) s.tol.parAliment = true;
+    s.distrib = s.distrib || { repas: 2, pesee: 10 };
     if (s.fige === undefined) s.fige = null;
     return s;
   }
@@ -370,6 +381,7 @@
     voulue: voulue, voulueTot: voulueTot, part: part, bornes: bornes, planVoulu: planVoulu, plan: plan, doseAt: doseAt,
     plages: plages, recu: recu, bilan: bilan, bilans: bilans,
     setEffectif: setEffectif, setVoulue: setVoulue, setVoulueKg: setVoulueKg, applyToAll: applyToAll,
+    repas: repas, nPesee: nPesee, pesee: pesee, depuisPesee: depuisPesee, parPlaceRepas: parPlaceRepas,
     figer: figer, liberer: liberer, setDosePlage: setDosePlage, doseUnique: doseUnique,
     deleteFeed: deleteFeed, addFeed: addFeed, defaultState: defaultState,
     v8: v8, migrateV5: migrateV5, formeOk: formeOk, isState: isState, normalize: normalize, versV6: versV6,

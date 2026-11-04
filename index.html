@@ -101,7 +101,7 @@
   .dose .val{font-size:24px;font-weight:800;text-align:right;min-width:96px}
   .dose .val small{font-size:13px;font-weight:600;color:var(--muet);margin-left:2px}
   .dose button.val{border-bottom:2px dashed var(--ligne);border-radius:0;padding:0 0 1px}
-  .ecart{font-size:13px;color:var(--att);font-weight:600}
+  .ecart{font-size:13px;color:var(--att);font-weight:600;margin:-2px 0 6px 22px}
 
   /* plan */
   #planWrap{display:flex;flex-direction:column}
@@ -149,8 +149,8 @@
 </main>
 <nav id="nav"></nav>
 
-<script src="modele.js?v=10"></script>
-<script src="stockage.js?v=10"></script>
+<script src="modele.js?v=11"></script>
+<script src="stockage.js?v=11"></script>
 <script>
 'use strict';
 var M=window.Bergerie,S=window.Stockage;
@@ -403,7 +403,7 @@ function rationsHtml(bs){
       var v=M.voulue(l,f.id),a=b.aliments[f.id],val=kg?fmt((l.b||0)*v,1):String(gr(v));
       var res=state.fige
         ?(l.b>0?'reçoit <b class="num">'+gr(a.recu)+' g</b>':'')
-        :(l.b>0&&st.P>0?'<b class="num">'+gr(M.part(state,l,f.id))+' g</b>/place':'');
+        :(l.b>0&&st.P>0?'<b class="num">'+gr(M.part(state,l,f.id))+' g</b>/place/j':'');
       h+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(f.id)+'"></span>'+esc(f.name)+'</span>'+
         '<input class="champ num" id="r_'+l.id+'_'+f.id+'" data-act="ration" data-lot="'+l.id+'" data-feed="'+f.id+'" inputmode="decimal" value="'+val+'"'+(kg&&!(l.b>0)?' disabled':'')+'>'+
         '<span class="muet petit" style="width:34px">'+(kg?'kg':'g')+'</span><span class="petit" style="min-width:92px;text-align:right">'+res+'</span></div>';
@@ -425,8 +425,8 @@ function tremiesHtml(){
     if(f.repris&&!notice)h+='<div class="note">'+ic('info',18)+'<span>Doses reprises de l’ancienne version : vérifie qu’elles correspondent à tes trémies. Touche une dose pour la corriger.</span></div>';
     h+='<div class="ligne" style="gap:8px"><button class="btn'+(arm==='recalc'?' danger':'')+'" data-act="recalc">'+ic('unlock')+(arm==='recalc'?' Confirmer : recalculer':' Recalculer d’après les rations')+'</button><button class="btn" data-act="unique">'+ic('pen')+' Même dose partout</button></div>';
     if(showUnique){
-      h+='<div class="carte"><div class="nom" style="margin-bottom:4px">Même dose sur toutes les places</div><div class="muet petit">Par place et par rangée. Les tapis doubles reçoivent 2 fois cette dose (une par côté).</div>';
-      state.feeds.forEach(function(fd){h+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span><input class="champ num" id="uni_'+fd.id+'" inputmode="decimal" placeholder="—"><span class="muet petit">g/place</span></div>';});
+      h+='<div class="carte"><div class="nom" style="margin-bottom:4px">Même dose sur toutes les places</div><div class="muet petit">Par place et par jour (tous repas compris). Les tapis doubles reçoivent cette dose de chaque côté.</div>';
+      state.feeds.forEach(function(fd){h+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span><input class="champ num" id="uni_'+fd.id+'" inputmode="decimal" placeholder="—"><span class="muet petit">g/place/j</span></div>';});
       h+='<div class="ligne" style="margin-top:6px"><button class="btn prim" data-act="uniqueOk">'+ic('check')+' Appliquer</button><button class="btn" data-act="uniqueX">Annuler</button></div></div>';
     }
   }else{
@@ -447,21 +447,23 @@ function tremiesHtml(){
       if(!any&&!f){lines+='<div class="muet petit" style="padding:6px 0">rien à verser</div></div>';return;}
       state.feeds.forEach(function(fd){
         var d=r.d[fd.id]||0,dg=gr(d),key=t+':'+ri+':'+fd.id;
-        var deux=t<3?'<span class="tag num">2 × '+gr(d/2)+' g</span>':'';
-        var val;
-        if(f&&editDose===key)val='<input class="champ num" id="doseIn" value="'+dg+'" inputmode="decimal" data-t="'+t+'" data-k1="'+r.k1+'" data-k2="'+r.k2+'" data-feed="'+fd.id+'"><button class="ico" data-act="doseOk" aria-label="Valider">'+ic('check')+'</button>';
-        else if(f)val='<button class="val num" data-act="dose" data-key="'+key+'">'+dg+'<small>g/place</small></button>';
-        else val='<span class="val num">'+dg+'<small>g/place</small></span>';
+        /* en gros : la pesée à trouver (N positions, un repas) ; en petit : par place et par repas, et le jour */
+        var pk=fmt(M.pesee(state,d),2),val;
+        if(f&&editDose===key)val='<input class="champ num" id="doseIn" value="'+pk+'" inputmode="decimal" data-t="'+t+'" data-k1="'+r.k1+'" data-k2="'+r.k2+'" data-feed="'+fd.id+'"><span class="muet">kg</span><button class="ico" data-act="doseOk" aria-label="Valider">'+ic('check')+'</button>';
+        else if(f)val='<button class="val num" data-act="dose" data-key="'+key+'">'+pk+'<small>kg</small></button>';
+        else val='<span class="val num">'+pk+'<small>kg</small></span>';
+        var det='pesée sur '+M.nPesee(state)+(t<3?' positions ('+2*M.nPesee(state)+' places)':' places')+', un repas<br>'+
+          '<b class="num" style="color:var(--encre)">'+gr(M.parPlaceRepas(state,t,d))+'&nbsp;g</b> par place et par repas · '+dg+'&nbsp;g/j '+(t<3?'par position':'par place');
         var ec='';
-        if(f&&r.ecartCalcul){var dv=M.doseAt(pv[t],r.k1)[fd.id]||0;if(gr(dv)!==dg)ec='<div class="ecart" style="text-align:right">d’après les rations : '+gr(dv)+' g/place</div>';}
-        lines+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span>'+deux+val+'</div>'+ec;
+        if(f&&r.ecartCalcul){var dv=M.doseAt(pv[t],r.k1)[fd.id]||0;if(fmt(M.pesee(state,dv),2)!==pk)ec='<div class="ecart">d’après les rations : '+fmt(M.pesee(state,dv),2)+' kg</div>';}
+        lines+='<div class="dose"><span class="fn"><span class="dot" style="background:'+feedCol(fd.id)+'"></span>'+esc(fd.name)+'</span>'+val+'</div><div class="muet petit" style="margin:-4px 0 6px 22px;line-height:1.4">'+det+'</div>'+ec;
       });
       lines+='</div>';
     });
     h+='<div class="carte"><div class="ligne"><span class="nom sp">'+NOMS_TAPIS[t]+'</span><span class="tag num">total '+fmt(tot,1)+' kg</span></div>'+lines+'</div>';
   });
   h+='<div class="carte ligne"><span class="muet sp">À verser au total</span><span class="moyen num">'+fmt(grand,1)+' kg</span></div>';
-  h+='<div class="hint">Places numérotées depuis la gauche. La trémie verse au milieu du tapis double : une seule dose pour les 2 rangées, chaque rangée en reçoit la moitié (« 2 × »). Impossible de séparer la ration de 2 lots face à face.</div>';
+  h+='<div class="hint">En gros : le poids à trouver à la pesée de réglage, sur '+M.nPesee(state)+' positions et pour un repas ('+M.repas(state)+' repas par jour, modifiable dans Réglages). Places numérotées depuis la gauche. La trémie verse au milieu du tapis double : une seule dose pour les 2 rangées, chaque rangée en reçoit la moitié. Impossible de séparer la ration de 2 lots face à face.</div>';
   return h;
 }
 
@@ -502,12 +504,15 @@ function reglagesHtml(){
     else h+='<div class="ligne" style="padding:5px 0"><span class="dot" style="background:'+feedCol(f.id)+'"></span><span class="sp" style="font-weight:600">'+esc(f.name)+'</span><button class="ico" data-act="feedRen" data-feed="'+f.id+'" aria-label="Renommer">'+ic('pen')+'</button><button class="ico'+(arm==='feed:'+f.id?' danger':'')+'" data-act="feedDel" data-feed="'+f.id+'" aria-label="Supprimer">'+(arm==='feed:'+f.id?'OK ?':ic('trash'))+'</button></div>';
   });
   h+='<div class="ligne" style="padding-top:8px"><input class="champ txt" id="newFeed" placeholder="Nouvel aliment"><button class="btn" data-act="feedAdd">'+ic('plus')+' Ajouter</button></div></div>';
+  h+='<h2>Distribution</h2><div class="carte"><div class="ligne"><span class="sp">Repas par jour</span><input class="champ num" id="repasIn" data-act="distrib" inputmode="numeric" value="'+M.repas(state)+'" style="width:76px"></div>'+
+    '<div class="ligne" style="margin-top:8px"><span class="sp">Pesée de réglage sur</span><input class="champ num" id="peseeIn" data-act="distrib" inputmode="numeric" value="'+M.nPesee(state)+'" style="width:76px"><span class="petit">positions</span></div>'+
+    '<div class="muet petit" style="margin-top:8px">L’onglet Trémies affiche le poids à trouver quand tu pèses ce qui tombe sur ces positions en un repas (tapis double : 2 places par position).</div></div>';
   h+='<h2>Marges d’erreur du contrôle</h2><div class="carte">'+margesHtml()+'</div>';
   h+='<h2>Sauvegarde</h2><div class="carte"><div class="ligne" style="gap:8px"><button class="btn" id="btnExport" data-act="export">'+ic('dl')+' Exporter</button><button class="btn" id="btnImport" data-act="import">'+ic('ul')+' Importer</button><input type="file" id="impFile" accept="application/json,.json" style="display:none"></div>'+
     '<div class="muet petit" style="margin-top:8px">Un fichier à garder, ou pour passer sur un autre téléphone.</div><div class="sep"></div>'+
     '<button class="btn" id="btnCopies" data-act="copies">'+ic('reset')+' Copies automatiques</button><div class="muet petit" style="margin-top:8px">Une par jour sur 7 jours, et une avant chaque remise à zéro, import ou restauration. Sur ce téléphone uniquement.</div><div id="copiesList"></div></div>';
   h+='<h2>Tout effacer</h2><div class="carte"><button class="btn'+(arm==='reset'?' danger':'')+'" id="btnReset" data-act="reset">'+ic(arm==='reset'?'warn':'trash')+(arm==='reset'?' Confirmer : tout effacer':' Remettre à zéro')+'</button><div class="muet petit" style="margin-top:8px">Une copie est gardée avant d’effacer.</div></div>';
-  h+='<div class="hint">Ma bergerie v10 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
+  h+='<div class="hint">Ma bergerie v11 · toutes les données restent sur ce téléphone, rien n’est envoyé. Fonctionne sans réseau.</div>';
   return h;
 }
 function renderCopies(){
@@ -600,7 +605,8 @@ document.addEventListener('click',function(e){
 });
 function validerDose(){
   var di=$('doseIn');if(!di)return;
-  M.setDosePlage(state,+di.getAttribute('data-t'),+di.getAttribute('data-k1'),+di.getAttribute('data-k2'),+di.getAttribute('data-feed'),pnum(di.value)/1000);
+  /* saisie = le poids pesé (kg sur N positions, un repas) */
+  M.setDosePlage(state,+di.getAttribute('data-t'),+di.getAttribute('data-k1'),+di.getAttribute('data-k2'),+di.getAttribute('data-feed'),M.depuisPesee(state,pnum(di.value)));
   editDose=null;save();render();
 }
 document.addEventListener('input',function(e){
@@ -608,6 +614,11 @@ document.addEventListener('input',function(e){
   var l=lotById(+el.getAttribute('data-lot'));
   if(a==='eff'){if(String(el.value).trim()==='')return;M.setEffectif(l,pnum(el.value));}
   else if(a==='ration'){var f=+el.getAttribute('data-feed'),v=pnum(el.value);if(state.pref==='kg')M.setVoulueKg(l,f,v);else M.setVoulue(l,f,v/1000);}
+  else if(a==='distrib'){
+    var rp=Math.round(pnum($('repasIn').value)),np=Math.round(pnum($('peseeIn').value));
+    if(!(rp>=1&&rp<=10&&np>=1&&np<=DBL_PL))return;
+    state.distrib={repas:rp,pesee:np};
+  }
   else if(a==='tol'){
     var tv=Math.round(pnum($('tolV').value)*10)/10,to=Math.round(pnum($('tolO').value)*10)/10;
     if(!(tv>0&&to>tv&&to<=100))return;  /* attendre une saisie cohérente (vert < orange) */
