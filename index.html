@@ -1,0 +1,893 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#3c7a4e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Bergerie">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Ma bergerie — Lots & rations</title>
+<style>
+  :root{--vert:#3c7a4e;--vertf:#eaf2ec;--creme:#fbf8f1;--orange:#e3812f;--danger:#d1584f;--encre:#26221e;--muet:#8a8175;--ligne:#e6dfd0;}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--creme);color:var(--encre);display:flex;flex-direction:column;height:100dvh;overflow:hidden;-webkit-tap-highlight-color:transparent}
+  header{background:var(--vert);color:#fff;flex-shrink:0}
+  .hrow{display:flex;align-items:center;gap:10px;padding:8px 14px}
+  .brand{line-height:1.18;flex:1;min-width:0}
+  .brand b{font-size:16px;font-weight:700;letter-spacing:.2px;display:block;white-space:nowrap}
+  .brand span{font-size:10.5px;opacity:.75;letter-spacing:.8px;text-transform:uppercase;display:block}
+  button{font:inherit;border:none;border-radius:10px;cursor:pointer;background:none;padding:8px 12px;color:inherit}
+  .btnw{background:rgba(255,255,255,.14);color:#fff;border:1px solid rgba(255,255,255,.28);width:38px;height:38px;display:flex;align-items:center;justify-content:center;padding:0}
+  .btnw:active{background:rgba(255,255,255,.3)}
+  .btnw.warn{background:var(--danger);border-color:var(--danger)}
+  #main{flex:1;display:flex;flex-direction:column;min-height:0}
+  #mapWrap{flex:1;position:relative;min-height:0;background:#efe9dc}
+  #map{width:100%;height:100%;display:block;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .zooms{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:6px}
+  .zooms button{width:38px;height:38px;background:#fff;border:1px solid var(--ligne);color:var(--encre);display:flex;align-items:center;justify-content:center;padding:0;box-shadow:0 1px 4px rgba(38,34,30,.12)}
+  #side{flex-shrink:0;display:flex;flex-direction:column;background:#fff;border-top:1px solid var(--ligne)}
+  #tabs{display:flex;gap:6px;overflow-x:auto;padding:8px 10px 2px;background:#fff;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  #tabs::-webkit-scrollbar{display:none}
+  .tab{display:flex;align-items:center;gap:6px;border-radius:999px;padding:7px 13px;border:1.5px solid var(--ligne);background:#faf7f0;color:#4a443d;font-weight:600;font-size:13.5px;white-space:nowrap;flex-shrink:0}
+  .tab.on{border-color:var(--vert);background:var(--vertf);color:var(--vert)}
+  .tab svg{flex-shrink:0}
+  .tab .dot{width:11px;height:11px;border-radius:4px;flex-shrink:0}
+  .cbar{display:flex;justify-content:center;flex-shrink:0;padding:2px 0 3px}
+  .cbar button{display:flex;align-items:center;gap:6px;color:var(--muet);font-size:12px;font-weight:600;letter-spacing:.4px;padding:5px 14px;border-radius:999px}
+  .cbar button:active{background:#f3eee3}
+  #panel{padding:2px 14px 16px;max-height:42dvh;overflow:auto;flex-shrink:0}
+  #side.min #panel{display:none}
+  .ph{font-weight:700;color:var(--vert);display:flex;align-items:center;gap:8px;margin:6px 0 4px;flex-wrap:wrap;font-size:15px}
+  .dot{width:13px;height:13px;border-radius:4px;display:inline-block;flex-shrink:0}
+  .row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:8px 0}
+  .lbl{font-size:11px;font-weight:600;letter-spacing:.7px;text-transform:uppercase;color:var(--muet);min-width:82px}
+  .vv{font-size:14px;color:#4a4440;line-height:1.4}
+  .big{font-size:16px;font-weight:700}
+  button.step{width:42px;height:42px;background:#faf7f0;border:1px solid var(--ligne);color:var(--encre);font-size:20px;padding:0}
+  button.act{background:var(--vert);color:#fff}
+  button.warn{background:var(--danger);color:#fff}
+  .closep{margin-left:auto;background:#f3eee3;color:#5a5248;padding:6px 9px;border-radius:9px;display:flex;align-items:center}
+  .btnsm{background:#f3eee3;color:#4a443d;padding:5px 10px;border-radius:9px;font-size:13.5px;display:inline-flex;align-items:center;gap:6px}
+  .btnsm.danger{background:#fdeceb;color:#a33b32}
+  input{font:inherit;border:1px solid var(--ligne);border-radius:10px;padding:9px 8px;background:#fff;color:var(--encre);font-size:16px;text-align:center}
+  input.short{width:76px}
+  .hint{font-size:12.5px;color:var(--muet);margin-top:8px;line-height:1.45}
+  .sep{border-top:1px solid var(--ligne);margin:10px 0}
+  .chip{border-radius:999px;padding:7px 13px;border:2px solid transparent;font-weight:600;background:#f3eee3;color:var(--encre);font-size:13.5px}
+  .chip.on{border-color:var(--encre)}
+  .fcard{border-radius:12px;padding:8px 12px;margin:8px 0;background:#fff;border:1px solid var(--ligne)}
+  .fc-top{display:flex;align-items:center;gap:7px}
+  .fc-name{font-weight:600;flex:1}
+  .fc-bar{height:8px;border-radius:4px;background:#f0ebdd;margin:6px 0 4px;overflow:hidden}
+  .fc-fill{height:100%;border-radius:4px}
+  .fc-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .tot{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0;font-size:15px}
+  .tot b{font-size:18px}
+  .mini{font-size:12px;border-radius:8px;padding:2px 7px;margin:1px;display:inline-flex;align-items:center;gap:5px}
+  .mini .dot{width:9px;height:9px}
+  .lotsList .lrow{display:flex;align-items:center;gap:8px;padding:10px 4px;border-bottom:1px solid var(--ligne);cursor:pointer;flex-wrap:wrap}
+  .lotsList .lrow:active{background:#faf7f0}
+  .lrow .nm{font-weight:700}
+  .su{font-size:12px;color:#7a7267;border:1px solid var(--ligne);border-radius:7px;padding:2px 7px;margin:1px;display:inline-block;background:#faf7f0}
+  .trow{display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f3eee3;flex-wrap:wrap}
+  .notice{background:#f3eee3;border:1px solid var(--ligne);border-radius:10px;padding:7px 11px;font-size:13px;margin:6px 0;display:flex;gap:8px;align-items:flex-start;color:#4a443d}
+  .notice svg{flex-shrink:0;margin-top:1px}
+  .notice.ko{background:#fdeceb;color:#a33b32;border-color:#f2cdc9}
+  @media(min-width:920px){
+    #main{flex-direction:row}
+    #side{width:430px;border-top:none;border-left:1px solid var(--ligne)}
+    #panel{max-height:none;flex:1;min-height:0}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="hrow">
+    <div class="brand"><b>Ma bergerie</b><span>Lots &amp; rations</span></div>
+    <button class="btnw" id="btnReset" title="Tout remettre à zéro"></button>
+  </div>
+</header>
+<main id="main">
+  <div id="mapWrap">
+    <svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="zooms">
+      <button id="zin" title="Zoomer"></button>
+      <button id="zout" title="Dézoomer"></button>
+      <button id="zfit" title="Vue complète"></button>
+    </div>
+  </div>
+  <div id="side">
+    <nav id="tabs"></nav>
+    <div class="cbar"><button id="pcol" title="Afficher ou masquer les détails"></button></div>
+    <section id="panel"></section>
+  </div>
+</main>
+<script src="modele.js?v=9"></script>
+<script src="stockage.js?v=9"></script>
+<script>
+'use strict';
+var M=window.Bergerie,S=window.Stockage;
+/* ============ BERGERIE — valeurs ajustables ============
+   35 m × 22 m — 3 places au mètre
+   Aires : toute la longueur (35 m). Seuls les tapis sont plus courts :
+   Tapis doubles : 92 places/côté (~30,67 m) — Tapis simple : 102 places (34 m)
+   Bandes : Aire 1 / Tapis 1 / Aire 2 / Tapis 2 / Aire 3 / Tapis 3 / Aire 4 / Tapis simple / couloir */
+var L=35, W=22, PL_M=M.PL_M, DBL_PL=M.DBL_PL, TS_PL=M.TS_PL;   /* géométrie : modele.js */
+var DBL_X0=M.DBL_X0, DBL_LEN=M.DBL_LEN, DBL_END=DBL_X0+DBL_LEN;   /* doubles : 0 → 30,67 m */
+var TS_X0=0, TS_LEN=M.TS_LEN, TS_END=TS_X0+TS_LEN;         /* simple : 0 → 34 m */
+var AIRES=[
+  {y:0.0,  h:4.3,lab:'Aire 1'},
+  {y:5.0,  h:4.3,lab:'Aire 2'},
+  {y:10.0, h:4.3,lab:'Aire 3'},
+  {y:15.0, h:4.3,lab:'Aire 4'}
+];
+var TAPIS=[
+  {y:4.3,  h:0.7,x1:DBL_END,lab:'Tapis double 1'},
+  {y:9.3,  h:0.7,x1:DBL_END,lab:'Tapis double 2'},
+  {y:14.3, h:0.7,x1:DBL_END,lab:'Tapis double 3'},
+  {y:19.3, h:0.7,x1:TS_END, lab:'Tapis simple'}
+];
+var LOT_COLS=['#a8d5b0','#f5cfa0','#a9cbe8','#f2b8cf','#e8e0a0','#c9b8e8','#9fd9c8','#f0b9a0'];
+var FEED_COLS=['#6a994e','#d9a441','#7b6cbf','#4d8fd1','#c96a5b','#3ba99c','#b5853f','#8a8f5a'];
+
+/* ============ icônes ============ */
+var ICONS={
+  plan:'<rect x="3" y="3" width="18" height="18" rx="2.5"/><path d="M3 9.5h18M9.5 3v18"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  hopper:'<path d="M4.5 4.5h15l-5.5 7v4.5l-4 3v-7.5z"/>',
+  chevU:'<path d="M6 14l6-6 6 6"/>',
+  chevD:'<path d="M6 10l6 6 6-6"/>',
+  reset:'<path d="M3.5 12a8.5 8.5 0 1 0 2.6-6.1L3.5 8.5"/><path d="M3.5 3.5v5h5"/>',
+  zin:'<circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.4-4.4M11 8v6M8 11h6"/>',
+  zout:'<circle cx="11" cy="11" r="7.5"/><path d="M21 21l-4.4-4.4M8 11h6"/>',
+  fit:'<path d="M8.5 3.5h-5v5M15.5 3.5h5v5M8.5 20.5h-5v-5M15.5 20.5h5v-5"/>',
+  pen:'<path d="M13.5 20.5h7"/><path d="M16.4 3.9a2 2 0 0 1 2.8 2.8L7.5 18.4l-3.9 1 1-3.9z"/>',
+  trash:'<path d="M3.5 6.5h17M8.5 6.5v-2h7v2M18.5 6.5l-1 14h-11l-1-14M10 11v5.5M14 11v5.5"/>',
+  warn:'<path d="M12 3.5L2.5 19.5a1.5 1.5 0 0 0 1.3 2.3h16.4a1.5 1.5 0 0 0 1.3-2.3L12 3.5z"/><path d="M12 10v4M12 17.5h.01"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 8h.01M12 11.5V16"/>',
+  check:'<path d="M20 6.5L9.5 17.5 4 12"/>',
+  close:'<path d="M17.5 6.5l-11 11M6.5 6.5l11 11"/>',
+  dl:'<path d="M12 3.5v11M7.5 10.5L12 15l4.5-4.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>',
+  ul:'<path d="M12 15.5v-11M7.5 8.5L12 4l4.5 4.5"/><path d="M4 16v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3"/>'
+};
+function ic(n,s){return '<svg viewBox="0 0 24 24" width="'+(s||13)+'" height="'+(s||13)+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+ICONS[n]+'</svg>';}
+
+/* ============ état ============ */
+/* calculs : modele.js (testé) — stockage : stockage.js (localStorage + miroir IndexedDB) */
+var KEY=M.KEY;
+var storageKo=false,fromBackup=false;
+function save(){storageKo=!S.enregistrer(state);}
+var boot=S.charger();
+var state=boot.state||M.defaultState();
+M.normalize(state);
+if(boot.source==='v3')save();
+var sel=null,showTrie=false,editName=null,editFeed=null,arm=null,notice='',panelMin=false;
+var anchorTk={}; /* dernier kg à verser connu par lot (effectif>0) */
+
+/* ============ géométrie / calculs (délégués au modèle) ============ */
+function xOfK(k){return M.xOfK(k);}
+function cumT(k){return M.cumT(k);}
+function ksOf(i){return M.ksOf(state,i);}
+function segsOf(i){return M.segsOf(state,i);}
+function lotById(id){return M.lotById(state,id);}
+function lotCol(id){return LOT_COLS[id%LOT_COLS.length];}
+function colFeed(id){return FEED_COLS[id%FEED_COLS.length];}
+function lotName(l){return l?(l.name?l.name:'Lot '+(l.id+1)):'—';}
+function lotShort(l){return l?(l.name?l.name.slice(0,14):'L'+(l.id+1)):'—';}
+function lotStats(id){return M.lotStats(state,id);}
+function ppVal(l,fid){return M.ppVal(l,fid);}
+function feedVal(l,fid){return M.feedVal(state,l,fid);}
+function setFeedVal(l,fid,v){M.setFeedVal(l,fid,v);}
+function setPP(l,fid,v){M.setPP(l,fid,v);}
+function setB(l,nb){return M.setB(state,l,nb,anchorTk);}
+function sumRations(l){return M.sumRations(state,l);}
+function lotTot(l,fid){return M.lotTot(state,l,fid);}
+function perPlace(l,fid){return M.perPlace(state,l,fid);}
+function lotAt(i,k){return M.lotAt(state,i,k);}
+function dblRanges(t){return M.dblRanges(state,t);}
+function tsRanges(){return M.tsRanges(state);}
+function trieHtml(){
+  var head='<div class="ph">Trémies — réglage par place<button class="closep" id="pCloseTrie">'+ic('close',12)+'</button></div>';
+  if(!state.feeds.length)return head+'<div class="vv">Aucun aliment : ajoute-en depuis l’onglet Bergerie.</div>';
+  var names=['Tapis double 1','Tapis double 2','Tapis double 3','Tapis simple'];
+  var cards='',grand=0;
+  for(var t=0;t<4;t++){
+    var rs=(t<3?dblRanges(t):tsRanges()).filter(function(r){return r.tot>0;});
+    var tot=0;rs.forEach(function(r){tot+=(r.k2-r.k1)*r.tot;});
+    grand+=tot;
+    var lines='';
+    rs.forEach(function(r){
+      var same=r.b!=null&&r.b===r.a;
+      var who=lotShort(lotById(r.a))+((r.b==null)?'':(same?' des 2 côtés':' + '+lotShort(lotById(r.b))+' · ration commune'));
+      var dots='<span class="dot" style="background:'+lotCol(r.a)+'"></span>'+((r.b==null)?'':'<span class="dot" style="background:'+lotCol(r.b)+'"></span>');
+      var fed=state.feeds.filter(function(f){return (r.doses[f.id]||0)>0.0005;});
+      function feedLine(f,compact){
+        var pa=Math.round(perPlace(lotById(r.a),f.id)*1000);
+        var nm='<span class="dot" style="background:'+colFeed(f.id)+'"></span>'+esc(f.name);
+        var split='';
+        if(same){split='<span class="su">2 × '+pa+' g</span>';}
+        else if(r.b!=null){
+          var pb=Math.round(perPlace(lotById(r.b),f.id)*1000);
+          split='<span class="su">2 × '+Math.round((pa+pb)/2)+' g</span>';
+        }
+        if(compact)return '<div class="trow">'+dots+'<span class="vv" style="flex:1">places <b>'+(r.k1+1)+'–'+r.k2+'</b> <span class="su">'+esc(who)+'</span> '+nm+'</span>'+split+'<b>'+Math.round(r.doses[f.id]*1000)+' g/place</b></div>';
+        return '<div class="trow" style="padding-left:22px"><span class="vv" style="flex:1">'+nm+'</span>'+split+'<b>'+Math.round(r.doses[f.id]*1000)+' g/place</b></div>';
+      }
+      lines+=(fed.length===1)?feedLine(fed[0],true):('<div class="trow">'+dots+'<span class="vv" style="flex:1">places <b>'+(r.k1+1)+'–'+r.k2+'</b> <span class="su">'+esc(who)+'</span></span></div>'+fed.map(function(f){return feedLine(f,false);}).join(''));
+    });
+    cards+='<div class="fcard"><div class="fc-top"><span class="fc-name">'+names[t]+'</span><span class="su">total '+fmt(tot,1)+' kg</span></div>'+((lines)||'<div class="vv">rien à verser</div>')+'</div>';
+  }
+  var ctrl='';
+  M.controle(state).forEach(function(c){
+    var l=lotById(c.id);
+    ctrl+='<div class="trow"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="vv" style="flex:1">'+esc(lotShort(l))+' · <b>'+fmt(c.kg)+' kg</b> sur ses '+c.pl+' places</span><span class="vv">÷ '+c.b+' têtes = <b>'+c.g+' g/j</b> '+ic('check',11)+'</span></div>';
+  });
+  return head+cards+
+    '<div class="tot">À verser au total <b>'+fmt(grand)+' kg</b></div>'+
+    ((ctrl)?'<div class="ph">'+ic('check',14)+' Contrôle par lot</div>'+ctrl:'')+
+    '<div class="hint">Places numérotées depuis la gauche. La trémie verse au milieu du tapis : une seule ration pour les 2 rangées — « 2 × » la dose par rangée, impossible à séparer entre 2 lots. Contrôle par lot : total versé ÷ effectif = sa ration g/j.</div>';
+}
+function fmt(n,d){if(d==null)d=2;return (+(n.toFixed(d))).toFixed(d).replace('.',',');}
+function pnum(v){var x=parseFloat(String(v).replace(',','.'));return isNaN(x)?0:x;}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function $(id){return document.getElementById(id);}
+
+/* ============ sauvegarde fichier (export / import) ============ */
+function exportData(){
+  try{
+    var data=M.exportJson(state);
+    var a=document.createElement('a');
+    a.href=URL.createObjectURL(new Blob([data],{type:'application/json'}));
+    a.download='bergerie-'+new Date().toISOString().slice(0,10)+'.json';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},2000);
+    notice='Sauvegarde téléchargée — garde-la précieusement.';
+  }catch(e){notice='Export impossible sur ce navigateur.';}
+  save();renderPanel();
+}
+function importJson(text){return M.importJson(text);}
+function applyImport(text){
+  var r=importJson(text);
+  if(r.ok){S.copieAvant(state,'import');state=r.state;sel=null;showTrie=false;notice=r.msg;save();renderMap();renderTabs();renderPanel();}
+  else{notice=r.msg;renderPanel();}
+}
+function doImport(file){
+  if(!file)return;
+  try{
+    var rd=new FileReader();
+    rd.onload=function(){applyImport(String(rd.result));};
+    rd.onerror=function(){notice='Fichier illisible.';renderPanel();};
+    rd.readAsText(file);
+  }catch(e){notice='Import impossible sur ce navigateur.';renderPanel();}
+}
+
+var svg=$('map');
+var view={x:0,y:0,w:35.8,h:23.2};
+function setVB(){svg.setAttribute('viewBox',view.x+' '+view.y+' '+view.w+' '+view.h);}
+function fitView(){
+  var r=svg.getBoundingClientRect();
+  var s=Math.min(r.width/35.8,Math.max(r.height,1)/23.2);
+  view.w=r.width/s;view.h=r.height/s;
+  view.x=17.5-view.w/2;view.y=11-view.h/2;
+  setVB();
+}
+function clampView(){
+  var cx=view.x+view.w/2,cy=view.y+view.h/2;
+  cx=Math.max(-4,Math.min(L+4,cx));cy=Math.max(-3,Math.min(W+3,cy));
+  view.x=cx-view.w/2;view.y=cy-view.h/2;
+}
+function zoomAt(cx,cy,f){
+  var r=svg.getBoundingClientRect();
+  var px=view.x+((cx-r.left)/r.width)*view.w;
+  var py=view.y+((cy-r.top)/r.height)*view.h;
+  var nw=Math.max(6,Math.min(90,view.w*f));f=nw/view.w;
+  view.w*=f;view.h*=f;
+  view.x=px-((cx-r.left)/r.width)*view.w;
+  view.y=py-((cy-r.top)/r.height)*view.h;
+  clampView();setVB();
+}
+
+/* ============ dessin ============ */
+function renderMap(){
+  var o=[];
+  o.push('<rect x="0" y="0" width="'+L+'" height="'+W+'" fill="#f0ead9"/>');
+  o.push('<rect x="0" y="20" width="'+L+'" height="2" fill="#e7efe4" stroke="#b9cdb6" stroke-width="0.06"/>');
+  o.push('<text x="'+(L/2)+'" y="21.2" font-size="0.85" fill="#6f8a6b" text-anchor="middle">Couloir d’alimentation</text>');
+  AIRES.forEach(function(b){
+    o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#f6efdd" stroke="#cfc7b8" stroke-width="0.05"/>');
+  });
+  TAPIS.forEach(function(b){
+    o.push('<rect x="0" y="'+b.y+'" width="'+L+'" height="'+b.h+'" fill="#e6ddca"/>');
+    o.push('<rect x="0" y="'+b.y+'" width="'+b.x1+'" height="'+b.h+'" fill="#d7e5d2" stroke="#cfc7b8" stroke-width="0.05"/>');
+  });
+  AIRES.forEach(function(b,i){
+    segsOf(i).forEach(function(sg){
+      var left=xOfK(sg.k1), right=sg.isLast?L:xOfK(sg.k2);
+      if(right-left<=0)return;
+      o.push('<rect x="'+left+'" y="'+b.y+'" width="'+(right-left)+'" height="'+b.h+'" fill="'+lotCol(sg.lot)+'" opacity="0.55"/>');
+      if(sel&&sel.t==='seg'&&sel.i===i&&sel.j===sg.j)
+        o.push('<rect x="'+left+'" y="'+(b.y-0.05)+'" width="'+(right-left)+'" height="'+(b.h+0.1)+'" fill="none" stroke="#3c7a4e" stroke-width="0.22"/>');
+      var cx=(left+right)/2,w=right-left,lo=lotById(sg.lot);
+      if(w>=1.6){
+        o.push('<text x="'+cx+'" y="'+(b.y+b.h/2-0.1)+'" font-size="0.75" font-weight="700" fill="#33402f" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="0.12" stroke-opacity="0.85">'+esc(lotShort(lo))+'</text>');
+        var bb=lo?(lo.b||0):0, gj=lo?Math.round(sumRations(lo)*1000):0;
+        var l2=bb>0?(bb+' têtes'+(gj>0?' · '+gj+' g/j':'')):'';
+        if(l2&&w>=3.0)o.push('<text x="'+cx+'" y="'+(b.y+b.h/2+0.85)+'" font-size="0.55" fill="#5a5248" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="0.1" stroke-opacity="0.85">'+l2+'</text>');
+      }
+    });
+  });
+  AIRES.forEach(function(b){
+    o.push('<text x="0.45" y="'+(b.y+0.85)+'" font-size="0.75" fill="#9a8f7c" paint-order="stroke" stroke="#ffffff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');
+  });
+  TAPIS.forEach(function(b,tix){
+    o.push('<text x="0.4" y="'+(b.y+0.28)+'" font-size="0.44" fill="#4f6b4a" paint-order="stroke" stroke="#ffffff" stroke-width="0.1" stroke-opacity="0.75">'+b.lab+'</text>');
+    var maxK=(tix===3?TS_PL:DBL_PL);
+    for(var kk=10;kk<maxK;kk+=10){
+      var tx=xOfK(kk);
+      o.push('<line x1="'+tx+'" y1="'+(b.y+0.38)+'" x2="'+tx+'" y2="'+(b.y+0.66)+'" stroke="#a3b89f" stroke-width="0.045"/>');
+      o.push('<text x="'+tx+'" y="'+(b.y+0.64)+'" font-size="0.36" fill="#54704f" text-anchor="middle" paint-order="stroke" stroke="#ffffff" stroke-width="0.08" stroke-opacity="0.8">'+kk+'</text>');
+    }
+    o.push('<text x="'+(b.x1-0.15)+'" y="'+(b.y+0.64)+'" font-size="0.36" font-weight="700" fill="#54704f" text-anchor="end" paint-order="stroke" stroke="#ffffff" stroke-width="0.08" stroke-opacity="0.8">'+maxK+'</text>');
+  });
+  AIRES.forEach(function(b,i){
+    var ab=state.airs[i];
+    ab.barriers.forEach(function(k,p){
+      var drag=(gest&&gest.mode==='bar'&&gest.bar&&gest.bar.i===i&&gest.bar.p===p);
+      var x=xOfK(k),isSel=(sel&&sel.t==='bar'&&sel.i===i&&sel.p===p)||drag,sc=isSel?'#e3812f':'#a34e37';
+      o.push('<line x1="'+x+'" y1="'+b.y+'" x2="'+x+'" y2="'+(b.y+b.h)+'" stroke="'+sc+'" stroke-width="'+(isSel?0.3:0.2)+'" stroke-dasharray="0.55 0.35"/>');
+      o.push('<circle cx="'+x+'" cy="'+(b.y+b.h/2)+'" r="'+(isSel?0.55:0.45)+'" fill="'+sc+'" stroke="#ffffff" stroke-width="0.09"/>');
+      if(isSel){
+        var g=k-(p===0?0:ab.barriers[p-1]), d=(p===ab.barriers.length-1?DBL_PL:ab.barriers[p+1])-k;
+        o.push('<text x="'+x+'" y="'+(b.y+0.5)+'" font-size="0.6" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">col. '+k+'</text>');
+        o.push('<text x="'+x+'" y="'+(b.y+1.15)+'" font-size="0.5" font-weight="700" fill="#a34e37" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="0.12">◀ '+g+' pl · '+d+' pl ▶</text>');
+      }
+    });
+  });
+  o.push('<rect x="0" y="0" width="'+L+'" height="'+W+'" fill="none" stroke="#7a6f63" stroke-width="0.16"/>');
+  svg.innerHTML=o.join('');
+}
+
+/* ============ onglets & panneau ============ */
+function setPanelMin(v){
+  panelMin=v;
+  var sd=$('side');if(sd){if(v)sd.classList.add('min');else sd.classList.remove('min');}
+  var pc=$('pcol');if(pc)pc.innerHTML=(v?ic('chevD',13)+'<span>Détails</span>':ic('chevU',13)+'<span>Masquer</span>');
+}
+function renderTabs(){
+  var h='',homeOn=!sel&&!showTrie&&!(sel&&sel.t==='new');
+  h+='<button class="tab'+(homeOn?' on':'')+'" data-tab="home">'+ic('plan',13)+'<span>Bergerie</span></button>';
+  state.lots.forEach(function(l){
+    var on=!showTrie&&sel&&((sel.t==='lot'&&sel.id===l.id)||(sel.t==='seg'&&state.airs[sel.i].lots[sel.j]===l.id));
+    h+='<button class="tab'+(on?' on':'')+'" data-tab="lot" data-id="'+l.id+'"><span class="dot" style="background:'+lotCol(l.id)+'"></span>'+esc(lotShort(l))+'</button>';
+  });
+  h+='<button class="tab'+(sel&&sel.t==='new'?' on':'')+'" data-tab="new">'+ic('plus',13)+'<span>Lot</span></button>';
+  h+='<button class="tab'+(showTrie?' on':'')+'" data-tab="trie">'+ic('hopper',13)+'<span>Trémies</span></button>';
+  $('tabs').innerHTML=h;
+  Array.prototype.forEach.call($('tabs').querySelectorAll('.tab'),function(b){
+    b.addEventListener('click',function(){
+      var t=b.getAttribute('data-tab');
+      notice='';editName=null;editFeed=null;
+      if(t==='home'){sel=null;showTrie=false;}
+      else if(t==='lot'){sel={t:'lot',id:+b.getAttribute('data-id')};showTrie=false;}
+      else if(t==='new'){sel={t:'new'};showTrie=false;}
+      else{showTrie=true;sel=null;}
+      if(t!=='home')setPanelMin(false);
+      renderMap();renderTabs();renderPanel();
+    });
+  });
+}
+
+function segsTxt(st){return st.segs.map(function(s){return 'Aire '+s.air+' (col. '+s.k1+'–'+s.k2+')';}).join(' · ')||'aucun morceau';}
+function chipsHtml(cur){
+  var h='';
+  state.lots.forEach(function(l){
+    h+='<button class="chip'+(l.id===cur?' on':'')+'" data-lot="'+l.id+'" style="background:'+lotCol(l.id)+'">'+esc(lotShort(l))+'</button>';
+  });
+  h+='<button class="chip" data-lot="new">'+ic('plus',11)+' Lot</button>';
+  return h;
+}
+function noticeHtml(){
+  return (storageKo?'<div class="notice ko">'+ic('warn',14)+'<span>Impossible d’enregistrer sur ce téléphone (navigation privée ?) : tes saisies seraient perdues à la fermeture. Ouvre la page dans un navigateur normal, ou exporte tes données.</span></div>':'')+
+    (notice?'<div class="notice">'+ic('info',14)+'<span>'+esc(notice)+'</span></div>':'');
+}
+function lotSection(id,withClose){
+  var l=lotById(id),st=lotStats(id);
+  if(!l)return '';
+  l.b=l.b||0;
+  var nameHtml;
+  if(editName===id){
+    nameHtml='<input id="editNameIn" value="'+esc(l.name||'')+'" placeholder="Nom du lot" style="flex:1;min-width:110px;text-align:left;font-weight:700">'+
+      '<button class="btnsm" id="btnNameOk">'+ic('check',12)+'</button><button class="btnsm" id="btnNameNo">'+ic('close',12)+'</button>';
+  }else{
+    nameHtml=esc(lotName(l))+'<button class="btnsm" id="btnRename">'+ic('pen',12)+'</button><button class="btnsm'+(arm==='lot:'+id?' danger':'')+'" id="btnDelLot">'+(arm==='lot:'+id?'Confirmer':ic('trash',12))+'</button>';
+  }
+  var cards='',max=0;
+  var pMode=state.pref||'kg';
+  state.feeds.forEach(function(f){max=Math.max(max,lotTot(l,f.id),feedVal(l,f.id));});
+  state.feeds.forEach(function(f){
+    var r=feedVal(l,f.id),t=lotTot(l,f.id),pp=perPlace(l,f.id)*1000;
+    var anchored=ppVal(l,f.id)!=null;
+    var w=max>0?Math.max(2,Math.round(Math.max(t,r)/max*100)):0;
+    var row;
+    if(pMode==='place'){
+      row='<div class="fc-row"><input class="short" id="pp_'+f.id+'" inputmode="decimal" value="'+Math.round(pp)+'"><span class="vv">g/place</span>'+
+        '<span class="su">'+((l.b||0)>0?'par brebis : '+Math.round(r*1000)+' g/j':'par brebis : —')+'</span>'+
+        '<span class="su">'+fmt(t,1)+' kg</span></div>';
+    }else if(pMode==='kg'){
+      row='<div class="fc-row"><input class="short" id="ft_'+f.id+'" inputmode="decimal" value="'+fmt(t,2)+'"><span class="vv">kg à verser</span><span class="vv">·</span><span class="vv">par brebis :</span><input class="short" id="fg_'+f.id+'" inputmode="decimal" value="'+Math.round(r*1000)+'"><span class="vv">g/j</span></div>';
+    }else{
+      row='<div class="fc-row"><input class="short" id="fg_'+f.id+'" inputmode="decimal" value="'+Math.round(r*1000)+'"><span class="vv">g/brebis/j</span><span class="vv">·</span><span class="vv">kg du lot :</span><input class="short" id="ft_'+f.id+'" inputmode="decimal" value="'+fmt(t,2)+'"><span class="vv">kg</span></div>';
+    }
+    cards+='<div class="fcard" style="background:'+colFeed(f.id)+'1e">'+
+      '<div class="fc-top"><span class="dot" style="background:'+colFeed(f.id)+'"></span><span class="fc-name">'+esc(f.name)+'</span><span class="su" id="fp_'+f.id+'">'+(pp>0.5?(anchored?'réglée : ':'≈ ')+Math.round(pp)+' g/place':'—')+'</span></div>'+
+      '<div class="fc-bar"><div class="fc-fill" id="fbar_'+f.id+'" style="background:'+colFeed(f.id)+';width:'+w+'%"></div></div>'+
+      row+
+      '</div>';
+  });
+  if(!state.feeds.length)cards='<div class="vv">Aucun aliment : ajoute-en depuis l’onglet Bergerie.</div>';
+  var tot=(l.b||0)*sumRations(l),perAll=sumRations(l)*1000;
+  return '<div class="ph"><span class="dot" style="background:'+lotCol(id)+'"></span>'+nameHtml+
+      (withClose?'<button class="closep" id="pClose">'+ic('close',12)+'</button>':'')+'</div>'+
+    '<div class="row"><span class="lbl">Brebis</span><button class="step" data-step="-1">−</button><input id="inB" inputmode="numeric" value="'+l.b+'" style="width:70px"><button class="step" data-step="1">+</button></div>'+
+    '<div class="row"><span class="lbl">Morceaux</span><span class="vv">'+segsTxt(st)+'</span></div>'+
+    '<div class="row"><span class="lbl">Places</span><span class="vv">T1 '+st.t[0]+' · T2 '+st.t[1]+' · T3 '+st.t[2]+' · TS '+st.t[3]+' → <b>'+st.P+' places</b></span></div>'+
+    '<div class="sep"></div>'+
+    '<div class="row"><span class="lbl">Je saisis en</span><button class="chip'+(pMode==='kg'?' on':'')+'" id="prefKg">kg</button><button class="chip'+(pMode==='per'?' on':'')+'" id="prefPer">g/brebis</button><button class="chip'+(pMode==='place'?' on':'')+'" id="prefPlc">g/place</button></div>'+
+    cards+
+    '<div class="tot">À verser au lot <b id="totKg">'+fmt(tot)+' kg</b><span class="su" id="totPer">'+((l.b||0)>0?'soit ≈ '+Math.round(perAll)+' g/brebis/j':'saisis les brebis')+'</span></div>'+
+    '<div class="row"><button class="act" id="btnApplyR">Appliquer ces rations à tous les lots</button></div>'+
+    '<div class="hint">Saisis dans le sens qui t’arrange avec « Je saisis en ». En « g/place » la dose réglée à la trémie ne bouge plus : bouge les barrières, change les effectifs, crée des lots — l’appli recalcule la ration par brebis. Le choix est mémorisé.</div>';
+}
+function feedsManagerHtml(){
+  var h='<div class="ph">Aliments</div>';
+  state.feeds.forEach(function(f){
+    if(editFeed===f.id){
+      h+='<div class="fc-row" style="margin:4px 0"><span class="dot" style="background:'+colFeed(f.id)+'"></span><input id="editFeedIn" value="'+esc(f.name)+'" style="flex:1;min-width:110px;text-align:left"><button class="btnsm" id="btnFeedOk">'+ic('check',12)+'</button><button class="btnsm" id="btnFeedNo">'+ic('close',12)+'</button></div>';
+    }else{
+      h+='<div class="fc-row" style="margin:4px 0"><button class="chip" data-renamef="'+f.id+'" style="background:'+colFeed(f.id)+'1e"><span class="dot" style="background:'+colFeed(f.id)+'"></span>'+esc(f.name)+'</button>'+
+        '<button class="btnsm'+(arm==='feed:'+f.id?' danger':'')+'" data-delf="'+f.id+'">'+(arm==='feed:'+f.id?'Confirmer':ic('trash',12))+'</button></div>';
+    }
+  });
+  h+='<div class="fc-row" style="margin:6px 0"><input id="newFeed" placeholder="nom de l’aliment" style="width:150px;text-align:left"><button class="chip" id="btnAddFeed">'+ic('plus',11)+' Aliment</button></div>';
+  return h;
+}
+function createLot(name,i,j){
+  var id=state.nextLot++;
+  state.lots.push({id:id,b:0,r:{},pp:{},name:(name||'').trim()||null});
+  if(i!=null&&j!=null&&state.airs[i])state.airs[i].lots[j]=id;
+  sel={t:'lot',id:id};notice='';
+  save();renderMap();renderTabs();renderPanel();
+}
+function renderPanel(){
+  renderTabs();
+  var el=$('panel');
+  if(showTrie){
+    el.innerHTML=noticeHtml()+trieHtml();
+    var ct=$('pCloseTrie');if(ct)ct.addEventListener('click',function(){showTrie=false;sel=null;renderTabs();renderPanel();});
+    return;
+  }
+  if(!sel){
+    var rows='',B=0,T=0,P=0;
+    state.lots.forEach(function(l){
+      var st=lotStats(l.id);B+=l.b||0;P+=st.P;T+=(l.b||0)*sumRations(l);
+      var minis='';
+      state.feeds.forEach(function(f){
+        var t=(l.b||0)*feedVal(l,f.id);
+        if(t>0)minis+='<span class="mini" style="background:'+colFeed(f.id)+'1e"><span class="dot" style="background:'+colFeed(f.id)+'"></span>'+fmt(t,1)+' kg</span>';
+      });
+      rows+='<div class="lrow" data-lot="'+l.id+'"><span class="dot" style="background:'+lotCol(l.id)+'"></span><span class="nm">'+esc(lotName(l))+'</span>'+
+        '<span class="vv">'+((l.b||0)>0?l.b+' têtes':'—')+'</span><span class="vv">'+st.P+' pl.</span>'+minis+'</div>';
+    });
+    el.innerHTML=noticeHtml()+'<div class="ph">Lots — '+state.lots.length+'</div><div class="lotsList">'+rows+'</div>'+
+      '<div class="row big" style="margin-top:2px">'+B+' têtes · '+P+' places · '+fmt(T)+' kg</div>'+
+      '<div class="sep"></div>'+feedsManagerHtml()+
+      '<div class="row" style="gap:8px"><button class="btnsm" id="btnExport">'+ic('dl',13)+' Exporter</button><button class="btnsm" id="btnImport">'+ic('ul',13)+' Importer</button><span class="vv" style="font-size:12.5px;color:var(--muet)">sauvegarde / autre appareil</span><input type="file" id="impFile" accept="application/json,.json" style="display:none"></div>'+
+      '<div class="row" style="gap:8px"><button class="btnsm" id="btnCopies">'+ic('reset',13)+' Copies automatiques</button><span class="vv" style="font-size:12.5px;color:var(--muet)">7 derniers jours, sur ce téléphone</span></div><div id="copiesList"></div>'+
+      '<div class="hint">Touche un morceau d’aire pour l’attribuer à un lot · appui long = nouvelle barrière · glisse une barrière pour la déplacer · touche un aliment pour le renommer.</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('.lrow'),function(r){
+      r.addEventListener('click',function(){notice='';sel={t:'lot',id:+r.getAttribute('data-lot')};setPanelMin(false);renderMap();renderTabs();renderPanel();});
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-renamef]'),function(c){
+      c.addEventListener('click',function(){editFeed=+c.getAttribute('data-renamef');renderPanel();});
+    });
+    Array.prototype.forEach.call(el.querySelectorAll('[data-delf]'),function(c){
+      c.addEventListener('click',function(){
+        var id=+c.getAttribute('data-delf'),key='feed:'+id;
+        if(arm===key){
+          arm=null;
+          M.deleteFeed(state,id);
+          notice='Aliment supprimé.';
+        }else{
+          arm=key;
+          setTimeout(function(){if(arm===key){arm=null;if(!sel&&!showTrie)renderPanel();}},4000);
+        }
+        save();renderPanel();
+      });
+    });
+    var bok=$('btnFeedOk');
+    if(bok)bok.addEventListener('click',function(){
+      var f=null;state.feeds.forEach(function(x){if(x.id===editFeed)f=x;});
+      if(f){f.name=($('editFeedIn').value||'').trim()||f.name;}
+      editFeed=null;save();renderPanel();
+    });
+    var bno=$('btnFeedNo');
+    if(bno)bno.addEventListener('click',function(){editFeed=null;renderPanel();});
+    var baf=$('btnAddFeed');
+    if(baf)baf.addEventListener('click',function(){
+      var n=($('newFeed').value||'').trim();
+      if(!n){notice='Écris d’abord le nom de l’aliment.';renderPanel();return;}
+      state.feeds.push({id:state.nextFeed++,name:n});
+      $('newFeed').value='';
+      save();renderPanel();
+    });
+    var be=$('btnExport');
+    if(be)be.addEventListener('click',exportData);
+    var bi2=$('btnImport');
+    if(bi2)bi2.addEventListener('click',function(){var f=$('impFile');if(f)f.click();});
+    var fi=$('impFile');
+    if(fi)fi.addEventListener('change',function(){doImport(fi.files&&fi.files[0]);fi.value='';});
+    var bc=$('btnCopies');
+    if(bc)bc.addEventListener('click',renderCopies);
+    return;
+  }
+  if(sel.t==='new'){
+    var ctx=(sel.i!=null&&sel.j!=null)?AIRES[sel.i].lab:null;
+    el.innerHTML=noticeHtml()+'<div class="ph">Nouveau lot<button class="closep" id="pClose">'+ic('close',12)+'</button></div>'+
+      '<div class="row"><input id="newLotName" placeholder="Nom du lot (facultatif)" style="flex:1;min-width:130px;text-align:left"><button class="act" id="btnCreateLot">Créer</button></div>'+
+      (ctx?'<div class="vv">Sera attribué au morceau touché ('+esc(ctx)+').</div>':'<div class="hint">Crée le lot, puis touche des morceaux d’aires pour les lui attribuer.</div>');
+    $('pClose').addEventListener('click',function(){sel=null;renderTabs();renderPanel();});
+    $('btnCreateLot').addEventListener('click',function(){createLot($('newLotName').value,sel.i,sel.j);});
+    return;
+  }
+  if(sel.t==='seg'){
+    var i=sel.i,j=sel.j,ks=ksOf(i),k1=ks[j],k2=ks[j+1],lid=state.airs[i].lots[j];
+    var sg=segsOf(i)[j],n=k2-k1;
+    var detail = i===1||i===2 ? n+' col. × 2 côtés = '+sg.pl+' places'
+      : i===0 ? n+' places au tapis 1'
+      : n+' + '+sg.ts+' (TS) = '+sg.pl+' places';
+    el.innerHTML=noticeHtml()+'<div class="ph">'+AIRES[i].lab+' · col. '+k1+' à '+k2+'<button class="closep" id="pClose">'+ic('close',12)+'</button></div>'+
+      '<div class="vv" style="margin:2px 0 8px">Ce morceau : '+detail+' · <button class="act" id="btnCut" style="padding:5px 10px;font-size:13px">+ Barrière au milieu</button></div>'+
+      '<div class="row"><span class="lbl">Lot</span>'+chipsHtml(lid)+'</div><div class="sep"></div>'+lotSection(lid,false);
+    $('pClose').addEventListener('click',function(){sel=null;renderMap();renderTabs();renderPanel();});
+    $('btnCut').addEventListener('click',function(){addBarrier(i,j,Math.round((k1+k2)/2));});
+    bindChips(i,j);
+    bindLot(lid);
+    return;
+  }
+  if(sel.t==='bar'){
+    var bi=sel.i,bp=sel.p,k=state.airs[bi].barriers[bp];
+    var leftL=lotById(state.airs[bi].lots[bp]),rightL=lotById(state.airs[bi].lots[bp+1]);
+    var gL=k-(bp===0?0:state.airs[bi].barriers[bp-1]), gR=(bp===state.airs[bi].barriers.length-1?DBL_PL:state.airs[bi].barriers[bp+1])-k;
+    el.innerHTML=noticeHtml()+'<div class="ph">Barrière — '+AIRES[bi].lab+', colonne '+k+'<button class="closep" id="pClose">'+ic('close',12)+'</button></div>'+
+      '<div class="row"><button class="act" data-a="bm">◀ 1 place</button><button class="act" data-a="bp">1 place ▶</button><button class="warn" data-a="bd">Supprimer</button></div>'+
+      '<div class="vv" style="margin:4px 0">Gauche : '+esc(lotShort(leftL))+' ('+gL+' pl) · Droite : '+esc(lotShort(rightL))+' ('+gR+' pl)</div>'+
+      '<div class="hint">Tu peux aussi la glisser directement dans le dessin. 1 place ≈ 33 cm.</div>';
+    Array.prototype.forEach.call(el.querySelectorAll('[data-a]'),function(bt){
+      bt.addEventListener('click',function(){
+        var a=bt.getAttribute('data-a');
+        if(a==='bm')moveBarrier(bi,bp,k-1);
+        else if(a==='bp')moveBarrier(bi,bp,k+1);
+        else delBarrier(bi,bp);
+      });
+    });
+    $('pClose').addEventListener('click',function(){sel=null;renderMap();renderTabs();renderPanel();});
+    return;
+  }
+  if(!lotById(sel.id)){sel=null;renderTabs();renderPanel();return;}
+  el.innerHTML=noticeHtml()+lotSection(sel.id,true);
+  $('pClose').addEventListener('click',function(){sel=null;renderMap();renderTabs();renderPanel();});
+  bindLot(sel.id);
+}
+/* copies automatiques (IndexedDB) : liste + restauration avec confirmation */
+function renderCopies(){
+  S.vider().then(S.copies).then(function(cs){
+    var box=$('copiesList');if(!box)return;
+    if(!cs.length){box.innerHTML='<div class="vv">Aucune copie pour l’instant.</div>';return;}
+    box.innerHTML=cs.map(function(c){
+      var k='copie:'+c.cle;
+      return '<div class="trow"><span class="vv" style="flex:1">'+esc(c.libelle)+' · '+c.lots+' lot(s)</span><button class="btnsm'+(arm===k?' danger':'')+'" data-copie="'+esc(c.cle)+'">'+(arm===k?'Confirmer':'Restaurer')+'</button></div>';
+    }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('[data-copie]'),function(bt){
+      bt.addEventListener('click',function(){
+        var cle=bt.getAttribute('data-copie'),k='copie:'+cle;
+        if(arm!==k){arm=k;renderCopies();setTimeout(function(){if(arm===k){arm=null;renderCopies();}},4000);return;}
+        arm=null;
+        S.lireCopie(cle).then(function(cs2){
+          if(!cs2){notice='Copie illisible.';renderPanel();return;}
+          S.copieAvant(state,'restauration');
+          state=cs2;sel=null;showTrie=false;notice='Copie restaurée : '+state.lots.length+' lot(s).';
+          save();renderMap();renderTabs();renderPanel();
+        });
+      });
+    });
+  });
+}
+function bindChips(i,j){
+  Array.prototype.forEach.call($('panel').querySelectorAll('.chip[data-lot]'),function(c){
+    c.addEventListener('click',function(){
+      var v=c.getAttribute('data-lot');
+      notice='';
+      if(v==='new'){sel={t:'new',i:i,j:j};}
+      else state.airs[i].lots[j]=+v;
+      save();renderMap();renderTabs();renderPanel();
+    });
+  });
+}
+function bindLot(id){
+  var l=lotById(id),st=lotStats(id);
+  var inB=$('inB');
+  function refresh(kind,fid){
+    state.feeds.forEach(function(f){
+      var r=feedVal(l,f.id);
+      if(!(kind==='fg'&&f.id===fid)&&$('fg_'+f.id))$('fg_'+f.id).value=Math.round(r*1000);
+      if(!(kind==='ft'&&f.id===fid)&&$('ft_'+f.id))$('ft_'+f.id).value=fmt((l.b||0)*r,2);
+      if(!(kind==='pp'&&f.id===fid)&&$('pp_'+f.id))$('pp_'+f.id).value=Math.round(perPlace(l,f.id)*1000);
+      var pp2=perPlace(l,f.id)*1000;
+      if($('fp_'+f.id))$('fp_'+f.id).textContent=pp2>0.5?((ppVal(l,f.id)!=null?'réglée : ':'≈ ')+Math.round(pp2)+' g/place'):'—';
+    });
+    var max=0;state.feeds.forEach(function(f){max=Math.max(max,lotTot(l,f.id),feedVal(l,f.id));});
+    state.feeds.forEach(function(f){
+      var w=max>0?Math.max(2,Math.round(Math.max(lotTot(l,f.id),feedVal(l,f.id))/max*100)):0;
+      if($('fbar_'+f.id))$('fbar_'+f.id).style.width=w+'%';
+    });
+    var tot=(l.b||0)*sumRations(l);
+    if($('totKg'))$('totKg').textContent=fmt(tot)+' kg';
+    if($('totPer'))$('totPer').textContent=l.b>0?'soit ≈ '+Math.round(sumRations(l)*1000)+' g/brebis/j':'saisis les brebis';
+    renderMap();save();
+  }
+  if(inB)inB.addEventListener('input',function(){if(String(inB.value).trim()!=='')setB(l,pnum(inB.value));refresh();});
+  state.feeds.forEach(function(f){
+    var fg=$('fg_'+f.id),ft=$('ft_'+f.id);
+    if(!fg)return;
+    fg.addEventListener('input',function(){setFeedVal(l,f.id,Math.max(0,pnum(fg.value))/1000);refresh('fg',f.id);});
+    ft.addEventListener('input',function(){if(l.b>0)setFeedVal(l,f.id,Math.max(0,pnum(ft.value))/l.b);refresh('ft',f.id);});
+    var pe=$('pp_'+f.id);
+    if(pe)pe.addEventListener('input',function(){setPP(l,f.id,Math.max(0,pnum(pe.value))/1000);refresh('pp',f.id);});
+  });
+  var pk=$('prefKg'),pper=$('prefPer'),pplc=$('prefPlc');
+  if(pk)pk.addEventListener('click',function(){state.pref='kg';save();renderPanel();});
+  if(pper)pper.addEventListener('click',function(){state.pref='per';save();renderPanel();});
+  if(pplc)pplc.addEventListener('click',function(){state.pref='place';save();renderPanel();});
+  Array.prototype.forEach.call($('panel').querySelectorAll('.step'),function(bt){
+    bt.addEventListener('click',function(){inB.value=setB(l,(l.b||0)+parseInt(bt.getAttribute('data-step'),10));refresh();});
+  });
+  var ba=$('btnApplyR');
+  if(ba)ba.addEventListener('click',function(){
+    M.applyToAll(state,l);
+    save();renderPanel();
+  });
+  var br=$('btnRename');
+  if(br)br.addEventListener('click',function(){editName=id;renderPanel();});
+  var bok=$('btnNameOk');
+  if(bok)bok.addEventListener('click',function(){
+    l.name=($('editNameIn').value||'').trim()||null;
+    editName=null;save();renderMap();renderTabs();renderPanel();
+  });
+  var bno=$('btnNameNo');
+  if(bno)bno.addEventListener('click',function(){editName=null;renderPanel();});
+  var bd=$('btnDelLot');
+  if(bd)bd.addEventListener('click',function(){
+    var stt=lotStats(id);
+    if(stt.segs.length){notice='Ce lot a encore '+stt.segs.length+' morceau(x) : attribue-les à un autre lot avant de le supprimer.';renderPanel();return;}
+    if(arm==='lot:'+id){
+      arm=null;
+      state.lots=state.lots.filter(function(x){return x.id!==id;});
+      if(!state.lots.length)state.lots=[{id:state.nextLot++,b:0,r:{},pp:{}}];
+      sel=null;notice='Lot supprimé.';
+      save();renderMap();renderTabs();renderPanel();
+    }else{
+      arm='lot:'+id;
+      setTimeout(function(){if(arm==='lot:'+id){arm=null;renderPanel();}},4000);
+      renderPanel();
+    }
+  });
+}
+
+/* ============ barrières ============ */
+function insertBarrier(i,k){
+  var a=state.airs[i],p=0;
+  while(p<a.barriers.length&&a.barriers[p]<k)p++;
+  var lo=p===0?1:a.barriers[p-1]+1, hi=p===a.barriers.length?DBL_PL-1:a.barriers[p]-1;
+  if(lo>hi)return -1;
+  k=Math.max(lo,Math.min(hi,k));
+  a.barriers.splice(p,0,k);
+  a.lots.splice(p+1,0,a.lots[p]);
+  return p;
+}
+function addBarrier(i,j,k){
+  var a=state.airs[i];
+  var lo=j===0?1:a.barriers[j-1]+1, hi=j===a.barriers.length?DBL_PL-1:a.barriers[j]-1;
+  if(lo>hi){notice='Plus de place dans ce morceau.';renderPanel();return;}
+  k=Math.max(lo,Math.min(hi,k));
+  a.barriers.splice(j,0,k);
+  a.lots.splice(j+1,0,a.lots[j]);
+  save();
+  sel={t:'bar',i:i,p:j};
+  renderMap();renderTabs();renderPanel();
+}
+function moveBarrier(i,p,k){
+  var a=state.airs[i];
+  var lo=p===0?1:a.barriers[p-1]+1, hi=p===a.barriers.length-1?DBL_PL-1:a.barriers[p+1]-1;
+  k=Math.max(lo,Math.min(hi,k));
+  if(k===a.barriers[p])return;
+  a.barriers[p]=k;save();renderMap();renderPanel();
+}
+function moveBarrierLive(i,p,k){
+  var a=state.airs[i];
+  var lo=p===0?1:a.barriers[p-1]+1, hi=p===a.barriers.length-1?DBL_PL-1:a.barriers[p+1]-1;
+  k=Math.max(lo,Math.min(hi,k));
+  if(k===a.barriers[p])return;
+  a.barriers[p]=k;save();
+}
+function delBarrier(i,p){
+  var a=state.airs[i];
+  a.barriers.splice(p,1);
+  a.lots.splice(p,2,a.lots[p]);
+  sel=null;save();renderMap();renderTabs();renderPanel();
+}
+function kFromX(x){return Math.max(1,Math.min(DBL_PL-1,Math.round((x-DBL_X0)/DBL_LEN*DBL_PL)));}
+
+/* ============ interactions carte ============ */
+function toSvg(cx,cy){
+  var r=svg.getBoundingClientRect();
+  return {x:view.x+((cx-r.left)/r.width)*view.w, y:view.y+((cy-r.top)/r.height)*view.h};
+}
+function aireAt(y){for(var i=0;i<4;i++){if(y>=AIRES[i].y-0.15&&y<=AIRES[i].y+AIRES[i].h+0.15)return i;}return -1;}
+function hitBarrier(p){
+  var ai=aireAt(p.y);if(ai<0)return null;
+  var tol=14/svg.getBoundingClientRect().width*view.w,bp=-1,bd=1e9;
+  state.airs[ai].barriers.forEach(function(k,ix){var d=Math.abs(p.x-xOfK(k));if(d<tol&&d<bd){bd=d;bp=ix;}});
+  return bp<0?null:{i:ai,p:bp};
+}
+function segAt(p){
+  var ai=aireAt(p.y);
+  if(ai<0||p.x<-0.2||p.x>L+0.2)return null;
+  if(p.x>DBL_END+0.2)return {i:ai,j:state.airs[ai].lots.length-1};
+  var kF=(p.x-DBL_X0)/DBL_LEN*DBL_PL,ks=ksOf(ai);
+  for(var j=0;j<ks.length-1;j++)if(kF>=ks[j]-1e-9&&kF<=ks[j+1]+1e-9)return {i:ai,j:j};
+  return null;
+}
+var ptrs={},gest={mode:null,bar:null,moved:0,pc:null,pinch:null,timer:null,longOk:false,pDown:null};
+function nPtrs(){return Object.keys(ptrs).length;}
+function pinchInfo(){
+  var a=[];for(var id in ptrs)a.push(ptrs[id]);
+  return {cx:(a[0].x+a[1].x)/2,cy:(a[0].y+a[1].y)/2,d:Math.max(1,Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y))};
+}
+function clearTimer(){if(gest.timer){clearTimeout(gest.timer);gest.timer=null;}}
+svg.addEventListener('contextmenu',function(e){e.preventDefault();});
+svg.addEventListener('pointerdown',function(e){
+  e.preventDefault();
+  try{svg.setPointerCapture(e.pointerId);}catch(err){}
+  ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(nPtrs()===1){
+    gest.moved=0;gest.pc={x:e.clientX,y:e.clientY};gest.longOk=false;
+    var p=toSvg(e.clientX,e.clientY);gest.pDown=p;
+    var bI=hitBarrier(p);
+    if(bI){gest.mode='bar';gest.bar=bI;sel={t:'bar',i:bI.i,p:bI.p};setPanelMin(false);renderMap();renderPanel();}
+    else{
+      gest.mode='pan';
+      gest.timer=setTimeout(function(){
+        if(gest.mode==='pan'&&gest.moved<10&&nPtrs()===1){
+          var sg=segAt(gest.pDown);
+          if(sg){
+            var p2=insertBarrier(sg.i,kFromX(gest.pDown.x));
+            if(p2>=0){save();sel={t:'bar',i:sg.i,p:p2};gest.longOk=true;setPanelMin(false);renderMap();renderPanel();}
+          }
+        }
+      },600);
+    }
+  }else{
+    clearTimer();gest.mode='pinch';gest.bar=null;gest.pinch=pinchInfo();
+  }
+});
+svg.addEventListener('pointermove',function(e){
+  if(!(e.pointerId in ptrs))return;
+  ptrs[e.pointerId]={x:e.clientX,y:e.clientY};
+  if(nPtrs()>=2){
+    if(gest.mode!=='pinch'){clearTimer();gest.mode='pinch';gest.bar=null;gest.pinch=pinchInfo();return;}
+    var pi=pinchInfo();
+    if(gest.pinch){
+      zoomAt(gest.pinch.cx,gest.pinch.cy,gest.pinch.d/pi.d);
+      var r=svg.getBoundingClientRect();
+      view.x-=(pi.cx-gest.pinch.cx)/r.width*view.w;
+      view.y-=(pi.cy-gest.pinch.cy)/r.height*view.h;
+      clampView();setVB();
+    }
+    gest.pinch=pi;
+    return;
+  }
+  gest.moved=Math.max(gest.moved,Math.abs(e.clientX-gest.pc.x),Math.abs(e.clientY-gest.pc.y));
+  if(gest.moved>=10)clearTimer();
+  if(gest.mode==='bar'&&gest.bar){
+    var p=toSvg(e.clientX,e.clientY);
+    moveBarrierLive(gest.bar.i,gest.bar.p,kFromX(p.x));
+  }else if(gest.mode==='pan'){
+    view.x-=(e.clientX-gest.pc.x)/svg.getBoundingClientRect().width*view.w;
+    view.y-=(e.clientY-gest.pc.y)/svg.getBoundingClientRect().height*view.h;
+    clampView();setVB();
+    gest.pc={x:e.clientX,y:e.clientY};
+  }
+});
+function endPtr(e){
+  if(!(e.pointerId in ptrs))return;
+  delete ptrs[e.pointerId];
+  if(nPtrs()===1){
+    clearTimer();
+    for(var id in ptrs){gest.pc={x:ptrs[id].x,y:ptrs[id].y};break;}
+    gest.mode='pan';gest.bar=null;gest.pinch=null;
+    return;
+  }
+  if(nPtrs()===0){
+    clearTimer();
+    if(gest.mode==='bar'){renderPanel();}
+    else if(gest.mode==='pan'&&!gest.longOk&&gest.moved<10){
+      var p=toSvg(e.clientX,e.clientY),bI=hitBarrier(p);
+      if(bI)sel={t:'bar',i:bI.i,p:bI.p};
+      else{
+        var sg=segAt(p);
+        sel=sg?{t:'seg',i:sg.i,j:sg.j}:null;
+      }
+      if(sel)setPanelMin(false);
+      notice='';arm=null;
+      renderMap();renderTabs();renderPanel();
+    }
+    gest.mode=null;gest.bar=null;gest.pinch=null;gest.longOk=false;
+  }
+}
+svg.addEventListener('pointerup',endPtr);
+svg.addEventListener('pointercancel',endPtr);
+svg.addEventListener('wheel',function(e){e.preventDefault();zoomAt(e.clientX,e.clientY,e.deltaY>0?1.15:0.87);},{passive:false});
+
+/* ============ boutons ============ */
+$('btnReset').innerHTML=ic('reset',16);
+$('zin').innerHTML=ic('zin',16);
+$('zout').innerHTML=ic('zout',16);
+$('zfit').innerHTML=ic('fit',16);
+$('btnReset').addEventListener('click',function(){
+  var rB=$('btnReset');
+  if(arm==='reset'){
+    arm=null;rB.classList.remove('warn');rB.innerHTML=ic('reset',16);
+    S.copieAvant(state,'remise-a-zero');state=M.defaultState();sel=null;showTrie=false;notice='';
+    save();renderMap();renderTabs();renderPanel();
+    return;
+  }
+  arm='reset';rB.classList.add('warn');rB.innerHTML=ic('warn',16);
+  setTimeout(function(){if(arm==='reset'){arm=null;rB.classList.remove('warn');rB.innerHTML=ic('reset',16);}},4000);
+});
+$('zin').addEventListener('click',function(){var r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,0.8);});
+$('zout').addEventListener('click',function(){var r=svg.getBoundingClientRect();zoomAt(r.left+r.width/2,r.top+r.height/2,1.25);});
+$('zfit').addEventListener('click',fitView);
+$('pcol').addEventListener('click',function(){setPanelMin(!panelMin);});
+var lastAspect=0;
+window.addEventListener('resize',function(){
+  var r=svg.getBoundingClientRect(),a=r.width/Math.max(1,r.height);
+  if(lastAspect&&Math.abs(a/lastAspect-1)>0.25)fitView();
+  lastAspect=a;
+});
+
+/* ============ départ ============ */
+if(boot.state)save();  /* sinon : on attend le secours IndexedDB avant d'écrire quoi que ce soit */
+fitView();
+renderMap();
+renderTabs();
+setPanelMin((window.innerWidth||920)<920);
+renderPanel();
+/* secours : rien dans localStorage (vidé, abîmé) mais un miroir IndexedDB existe → on le reprend */
+if(!boot.state){
+  S.secours().then(function(s2){
+    if(!s2){save();return;}
+    state=s2;sel=null;notice='Données reprises de la copie de secours du téléphone.';
+    save();renderMap();renderTabs();renderPanel();
+  });
+}
+S.persister();
+if(typeof navigator!=='undefined'&&navigator.serviceWorker&&typeof location!=='undefined'&&(/^https:$/.test(location.protocol)||/^(localhost|127\.0\.0\.1)$/.test(location.hostname))){
+  try{navigator.serviceWorker.register('sw.js').catch(function(){});}catch(e){}
+}
+</script>
+</body>
+</html>

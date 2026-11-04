@@ -1,0 +1,25 @@
+{
+  "name": "Ma bergerie — lots & rations",
+  "short_name": "Bergerie",
+  "description": "Plan de la bergerie : aires, tapis, lots, barrières et réglage des trémies.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fbf8f1",
+  "theme_color": "#3c7a4e",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

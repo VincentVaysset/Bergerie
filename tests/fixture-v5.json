@@ -1,0 +1,14 @@
+{
+  "nextLot": 2, "nextFeed": 2, "pref": "place",
+  "feeds": [{ "id": 0, "name": "Céréales" }, { "id": 1, "name": "Alib maïs 22" }],
+  "lots": [
+    { "id": 0, "b": 200, "name": "Brebis", "r": { "0": 0.8, "1": 0.5 }, "pp": { "0": 0.5 } },
+    { "id": 1, "b": 80, "name": "Antenaises", "r": { "0": 0.9, "1": 0.7 }, "pp": {} }
+  ],
+  "airs": [
+    { "barriers": [], "lots": [0] },
+    { "barriers": [], "lots": [0] },
+    { "barriers": [], "lots": [0] },
+    { "barriers": [65], "lots": [1, 0] }
+  ]
+}
